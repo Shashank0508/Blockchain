@@ -2703,19 +2703,11 @@ Or say "help" to see all my capabilities!`, 'bot');
                 messagingInterface.style.display = 'flex';
                 console.log('Messaging interface displayed');
                 
-                // Initialize messaging if not already done
-                if (window.blockchainBuddy && window.blockchainBuddy.currentAccount) {
-                    console.log('Initializing wallet messaging with account:', window.blockchainBuddy.currentAccount);
-                    if (window.walletMessaging) {
-                        window.walletMessaging.init({
-                            address: window.blockchainBuddy.currentAccount,
-                            nickname: 'You'
-                        });
-                    } else {
-                        console.error('walletMessaging not available');
-                    }
+                // Show sidebar inbox with search and chat area
+                if (window.walletMessaging) {
+                    window.walletMessaging.showSidebarInbox();
                 } else {
-                    console.error('BlockchainBuddy or currentAccount not available');
+                    console.error('walletMessaging not available');
                 }
             } else {
                 console.error('Messaging interface element not found');

@@ -12,7 +12,7 @@ class WalletMessaging {
         this.firebase = null;
         this.database = null;
         this.auth = null;
-        
+        this.blockedContacts = new Set(JSON.parse(localStorage.getItem('blocked_contacts') || '[]'));
         this.initFirebase();
         this.initEncryption();
         this.setupEventListeners();
@@ -762,6 +762,259 @@ class WalletMessaging {
     // Get contacts key
     getContactsKey() {
         return this.currentUser ? `contacts_${this.currentUser.address}` : 'contacts';
+    }
+
+    // Get all conversations (unique senders)
+    getAllConversations() {
+        const keys = Object.keys(localStorage).filter(key => key.startsWith('chat_'));
+        const conversations = [];
+        keys.forEach(key => {
+            const messages = JSON.parse(localStorage.getItem(key) || '[]');
+            if (messages.length > 0) {
+                const lastMessage = messages[messages.length - 1];
+                conversations.push({
+                    sender: key.replace('chat_', ''),
+                    lastMessage,
+                });
+            }
+        });
+        // Sort by latest message timestamp descending
+        conversations.sort((a, b) => b.lastMessage.timestamp - a.lastMessage.timestamp);
+        return conversations;
+    }
+
+    // Show inbox with all conversations
+    showInbox() {
+        const chatContainer = document.getElementById('messagingInterface');
+        if (!chatContainer) return;
+        const conversations = this.getAllConversations();
+        if (conversations.length === 0) {
+            chatContainer.innerHTML = `<div style="text-align:center;padding:2rem;color:var(--text-secondary);font-size:1.1rem;">
+                <div style="font-size:2.5rem;">📭</div>
+                <div>Wait for the messages</div>
+                <div style="font-size:0.95rem;margin-top:1rem;">You have no messages yet.</div>
+            </div>`;
+            return;
+        }
+        chatContainer.innerHTML = `<div class="inbox-list">
+            <h3 style="margin-bottom:1rem;">Inbox</h3>
+            ${conversations.map(conv => `
+                <div class="inbox-item" onclick="walletMessaging.openChat('${conv.sender}')" style="cursor:pointer;padding:1rem;border-bottom:1px solid var(--border-color);display:flex;align-items:center;">
+                    <div class="inbox-avatar" style="width:40px;height:40px;border-radius:50%;background:#eee;display:flex;align-items:center;justify-content:center;font-size:1.3rem;margin-right:1rem;">
+                        ${conv.sender.slice(2,3).toUpperCase()}
+                    </div>
+                    <div style="flex:1;">
+                        <div style="font-weight:600;">${this.getContactName(conv.sender) || conv.sender.slice(0,10)+'...'+conv.sender.slice(-6)}</div>
+                        <div style="color:var(--text-secondary);font-size:0.95rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:200px;">
+                            ${conv.lastMessage.type === 'text' ? this.escapeHtml(conv.lastMessage.content) : `[${conv.lastMessage.type}]`}
+                        </div>
+                    </div>
+                    <div style="font-size:0.85rem;color:var(--text-secondary);margin-left:1rem;">
+                        ${this.formatTime(conv.lastMessage.timestamp)}
+                    </div>
+                </div>
+            `).join('')}
+        </div>`;
+    }
+
+    // Show sidebar inbox with search
+    showSidebarInbox() {
+        const chatContainer = document.getElementById('messagingInterface');
+        if (!chatContainer) return;
+        const conversations = this.getAllConversations();
+        const contactsArr = Object.values(this.contacts);
+        // Merge contacts and conversations (unique by address)
+        const allAddresses = new Set([
+            ...contactsArr.map(c => c.address),
+            ...conversations.map(c => c.sender)
+        ]);
+        const allList = Array.from(allAddresses).map(addr => {
+            const contact = this.contacts[addr];
+            const conv = conversations.find(c => c.sender === addr);
+            return {
+                address: addr,
+                nickname: contact ? contact.nickname : '',
+                lastMessage: conv ? conv.lastMessage : null
+            };
+        });
+        // Sidebar HTML
+        chatContainer.innerHTML = `
+        <div style="display:flex;height:100%;">
+            <div class="sidebar" style="width:260px;background:var(--bg-tertiary);border-right:1px solid var(--border-color);display:flex;flex-direction:column;">
+                <div style="padding:1rem 1rem 0.5rem 1rem;">
+                    <input type="text" id="inboxSearch" placeholder="Search contacts or address..." style="width:100%;padding:0.5rem;border-radius:6px;border:1px solid var(--border-color);background:var(--bg-secondary);color:var(--text-primary);">
+                </div>
+                <div id="sidebarList" style="flex:1;overflow-y:auto;">
+                </div>
+            </div>
+            <div id="mainChatArea" style="flex:1;display:flex;align-items:center;justify-content:center;background:var(--bg-secondary);">
+                <div style="text-align:center;color:var(--text-secondary);font-size:1.1rem;">
+                    <div style="font-size:2.5rem;">📭</div>
+                    <div>Wait for the messages</div>
+                    <div style="font-size:0.95rem;margin-top:1rem;">Select a conversation or wait for a message.</div>
+                </div>
+            </div>
+        </div>`;
+        // Render sidebar list
+        function renderSidebarList(filter = '') {
+            const sidebarList = chatContainer.querySelector('#sidebarList');
+            const filtered = allList.filter(item =>
+                (item.nickname && item.nickname.toLowerCase().includes(filter.toLowerCase())) ||
+                item.address.toLowerCase().includes(filter.toLowerCase())
+            );
+            if (allList.length === 0) {
+                sidebarList.innerHTML = `<div style='padding:1.5rem;color:var(--text-secondary);text-align:center;'>
+                    <div style='font-size:2.2rem;'>👥</div>
+                    <div style='margin-top:0.5rem;'>No contacts or conversations yet.</div>
+                    <div style='font-size:0.95rem;margin-top:0.5rem;'>Wait for the messages or add a contact.</div>
+                </div>`;
+                return;
+            }
+            if (filtered.length === 0) {
+                sidebarList.innerHTML = `<div style='padding:1.5rem;color:var(--text-secondary);text-align:center;'>
+                    <div style='font-size:2.2rem;'>🔍</div>
+                    <div style='margin-top:0.5rem;'>No results found.</div>
+                </div>`;
+                return;
+            }
+            sidebarList.innerHTML = filtered.map(item => `
+                <div class="sidebar-item" style="padding:0.75rem 1rem;cursor:pointer;display:flex;align-items:center;border-bottom:1px solid var(--border-color);" onclick="walletMessaging.openSidebarChat('${item.address}')">
+                    <div class="sidebar-avatar" style="width:32px;height:32px;border-radius:50%;background:#eee;display:flex;align-items:center;justify-content:center;font-size:1.1rem;margin-right:0.75rem;">
+                        ${(item.nickname ? item.nickname.charAt(0) : item.address.slice(2,3)).toUpperCase()}
+                    </div>
+                    <div style="flex:1;">
+                        <div style="font-weight:600;">${item.nickname || item.address.slice(0,10)+'...'+item.address.slice(-6)}</div>
+                        <div style="color:var(--text-secondary);font-size:0.92rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:120px;">
+                            ${item.lastMessage ? (item.lastMessage.type === 'text' ? walletMessaging.escapeHtml(item.lastMessage.content) : `[${item.lastMessage.type}]`) : ''}
+                        </div>
+                    </div>
+                    <div style="font-size:0.8rem;color:var(--text-secondary);margin-left:0.5rem;">
+                        ${item.lastMessage ? walletMessaging.formatTime(item.lastMessage.timestamp) : ''}
+                    </div>
+                </div>
+            `).join('');
+        }
+        renderSidebarList();
+        // Search event
+        chatContainer.querySelector('#inboxSearch').addEventListener('input', function(e) {
+            renderSidebarList(e.target.value);
+        });
+    }
+
+    // Open chat from sidebar
+    openSidebarChat(address) {
+        this.currentChat = address;
+        this.loadChatHistory();
+        // Replace main chat area with chat interface
+        const mainChatArea = document.getElementById('mainChatArea');
+        if (mainChatArea) {
+            // Check if there are any messages for this chat
+            const chatKey = `chat_${address}`;
+            const messages = JSON.parse(localStorage.getItem(chatKey) || '[]');
+            if (messages.length === 0) {
+                mainChatArea.innerHTML = `<div style='text-align:center;color:var(--text-secondary);font-size:1.1rem;'>
+                    <div style='font-size:2.5rem;'>💬</div>
+                    <div>No messages yet</div>
+                    <div style='font-size:0.95rem;margin-top:1rem;'>Start the conversation or wait for a message.</div>
+                </div>`;
+                return;
+            }
+            mainChatArea.innerHTML = '';
+            // Render chat interface into mainChatArea
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = this.getChatInterfaceHTML(address);
+            while (tempDiv.firstChild) {
+                mainChatArea.appendChild(tempDiv.firstChild);
+            }
+            this.renderMessages();
+        }
+    }
+
+    // Block a contact
+    blockContact(address) {
+        this.blockedContacts.add(address);
+        localStorage.setItem('blocked_contacts', JSON.stringify(Array.from(this.blockedContacts)));
+        this.closeSidebarChat();
+        alert('Contact blocked. You will not receive or send messages to this contact.');
+    }
+
+    // Unblock a contact
+    unblockContact(address) {
+        this.blockedContacts.delete(address);
+        localStorage.setItem('blocked_contacts', JSON.stringify(Array.from(this.blockedContacts)));
+        this.closeSidebarChat();
+        alert('Contact unblocked. You can now send and receive messages.');
+    }
+
+    // Helper to get chat interface HTML for sidebar
+    getChatInterfaceHTML(address) {
+        const contact = this.contacts[address];
+        const contactName = contact ? contact.nickname : address.slice(0, 10) + '...' + address.slice(-6);
+        const isBlocked = this.blockedContacts.has(address);
+        return `
+            <div class="chat-header">
+                <div class="chat-contact-info">
+                    <div class="contact-avatar">${contactName.charAt(0).toUpperCase()}</div>
+                    <div class="contact-details">
+                        <div class="contact-name">${contactName}</div>
+                        <div class="contact-status ${this.onlineUsers.has(address) ? 'online' : 'offline'}">
+                            ${this.onlineUsers.has(address) ? '🟢 Online' : '⚫ Offline'}
+                        </div>
+                    </div>
+                </div>
+                <div class="chat-actions">
+                    <button class="btn btn-secondary" onclick="walletMessaging.removeContact('${address}')" title="Remove contact">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M18 6L6 18M6 6l12 12"/>
+                        </svg>
+                    </button>
+                    <button class="btn btn-secondary" onclick="walletMessaging.${isBlocked ? 'unblockContact' : 'blockContact'}('${address}')" title="${isBlocked ? 'Unblock' : 'Block'} contact">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M18 6L6 18M6 6l12 12"/>
+                        </svg>
+                        ${isBlocked ? 'Unblock' : 'Block'}
+                    </button>
+                    <button class="btn btn-secondary" onclick="walletMessaging.closeSidebarChat()" title="Close chat">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M18 6L6 18M6 6l12 12"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            <div class="chat-messages" id="chatMessages"></div>
+            <div class="chat-input">
+                <div class="input-actions">
+                    <button class="btn btn-secondary" onclick="document.getElementById('fileInput').click()" ${isBlocked ? 'disabled' : ''}>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                            <polyline points="14,2 14,8 20,8"/>
+                        </svg>
+                    </button>
+                    <button class="btn btn-secondary" onclick="walletMessaging.sendTransactionMessage()" ${isBlocked ? 'disabled' : ''}>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                        </svg>
+                    </button>
+                </div>
+                <input type="text" id="messageInput" placeholder="Type your message..." onkeypress="if(event.key==='Enter') walletMessaging.sendTextMessage()" ${isBlocked ? 'disabled' : ''}>
+                <button class="btn btn-primary" onclick="walletMessaging.sendTextMessage()" ${isBlocked ? 'disabled' : ''}>Send</button>
+                <input type="file" id="fileInput" style="display: none;" onchange="walletMessaging.handleFileSelect(event)">
+                ${isBlocked ? '<div style=\'color:var(--accent-red);margin-top:0.5rem;\'>You have blocked this contact. Unblock to send or receive messages.</div>' : ''}
+            </div>
+        `;
+    }
+
+    // Close chat in sidebar
+    closeSidebarChat() {
+        this.currentChat = null;
+        const mainChatArea = document.getElementById('mainChatArea');
+        if (mainChatArea) {
+            mainChatArea.innerHTML = `<div style='text-align:center;color:var(--text-secondary);font-size:1.1rem;'>
+                <div style='font-size:2.5rem;'>📭</div>
+                <div>Wait for the messages</div>
+                <div style='font-size:0.95rem;margin-top:1rem;'>Select a conversation or wait for a message.</div>
+            </div>`;
+        }
     }
 }
 
