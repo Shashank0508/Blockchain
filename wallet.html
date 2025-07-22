@@ -748,15 +748,18 @@
             </div>
         </div>
         
-        <div class="wallet-section" id="transactionHistorySection" style="display: none;">
+        <div class="wallet-section" id="transactionHistorySection">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-                <h3>📊 Recent Transactions</h3>
+                <h3>📊 Transaction History</h3>
                 <div style="display: flex; gap: 0.5rem;">
                     <button class="btn btn-primary" onclick="fetchRealTransactionsFromUI()" style="padding: 0.5rem; font-size: 0.875rem;">
                         🔍 Fetch Real
                     </button>
                     <button class="btn btn-secondary" onclick="refreshTransactionHistory()" style="padding: 0.5rem; font-size: 0.875rem;">
                         🔄 Refresh
+                    </button>
+                    <button class="btn btn-secondary" onclick="clearTransactionHistory()" style="padding: 0.5rem; font-size: 0.875rem;">
+                        🗑️ Clear
                     </button>
                 </div>
             </div>
@@ -898,6 +901,9 @@
                 
                 // Reload contacts for the current wallet
                 loadContacts();
+                
+                // Always load transaction history
+                showTransactionHistory();
                 
                 // Update balance
                 window.blockchainBuddy.getBlockDAGBalance().then(balance => {
@@ -1901,6 +1907,9 @@ Just type or speak your command and I'll help you!`, 'bot');
                 // Load contacts for the connected wallet
                 loadContacts();
                 
+                // Always load transaction history
+                showTransactionHistory();
+                
                 // Clear sample data and fetch real transactions
                 const currentWallet = window.blockchainBuddy?.currentAccount;
                 if (currentWallet) {
@@ -1987,7 +1996,7 @@ Just type or speak your command and I'll help you!`, 'bot');
                 // Save real transactions to localStorage
                 localStorage.setItem('blockdag_transactions', JSON.stringify(transactions));
                 
-                // Refresh transaction history display
+                // Always load transaction history display
                 await showTransactionHistory();
                 
             } catch (error) {
@@ -2010,8 +2019,25 @@ Just type or speak your command and I'll help you!`, 'bot');
         
         // Function to refresh transaction history
         async function refreshTransactionHistory() {
-            if (document.getElementById('transactionHistorySection').style.display !== 'none') {
-                await showTransactionHistory();
+            await showTransactionHistory();
+        }
+
+        // Function to clear transaction history
+        function clearTransactionHistory() {
+            if (confirm('Are you sure you want to clear all transaction history? This cannot be undone.')) {
+                localStorage.removeItem('blockdag_transactions');
+                const transactionHistoryDiv = document.getElementById('transactionHistory');
+                if (transactionHistoryDiv) {
+                    transactionHistoryDiv.innerHTML = `
+                        <div style="text-align: center; padding: 2rem; color: var(--text-secondary);">
+                            <div style="font-size: 1.5rem; margin-bottom: 1rem;">📊</div>
+                            <div style="font-weight: 600; margin-bottom: 0.5rem;">No Transactions</div>
+                            <div style="font-size: 0.875rem;">Transaction history has been cleared.</div>
+                            <div style="font-size: 0.875rem; margin-top: 0.5rem;">Click "Fetch Real" to get new transactions!</div>
+                        </div>
+                    `;
+                }
+                showNotification('Transaction history cleared', 'success');
             }
         }
         
