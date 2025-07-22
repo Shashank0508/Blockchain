@@ -862,7 +862,8 @@
             // Initialize theme
             initializeTheme();
             
-            setTimeout(updateWalletInfo, 1000);
+            // Initial wallet info update (only once)
+            updateWalletInfo();
         });
 
         // Theme management functions
@@ -901,9 +902,6 @@
                 
                 // Reload contacts for the current wallet
                 loadContacts();
-                
-                // Always load transaction history
-                showTransactionHistory();
                 
                 // Update balance
                 window.blockchainBuddy.getBlockDAGBalance().then(balance => {
@@ -1174,7 +1172,7 @@
         }
 
         // Check if we're connected every 2 seconds
-        setInterval(updateWalletInfo, 2000);
+
         
         // Contact management functions
         function getCurrentWalletAddress() {
@@ -1907,7 +1905,7 @@ Just type or speak your command and I'll help you!`, 'bot');
                 // Load contacts for the connected wallet
                 loadContacts();
                 
-                // Always load transaction history
+                // Load transaction history once
                 showTransactionHistory();
                 
                 // Fetch real transactions from blockchain (only if no existing data)
