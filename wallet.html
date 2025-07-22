@@ -1910,14 +1910,14 @@ Just type or speak your command and I'll help you!`, 'bot');
                 // Always load transaction history
                 showTransactionHistory();
                 
-                // Clear sample data and fetch real transactions
+                // Fetch real transactions from blockchain (only if no existing data)
                 const currentWallet = window.blockchainBuddy?.currentAccount;
                 if (currentWallet) {
-                    // Clear existing sample data
-                    localStorage.removeItem('blockdag_transactions');
-                    
-                    // Fetch real transactions from blockchain
-                    fetchRealTransactions(currentWallet);
+                    // Only fetch if no existing transaction data
+                    const existingTransactions = localStorage.getItem('blockdag_transactions');
+                    if (!existingTransactions) {
+                        fetchRealTransactions(currentWallet);
+                    }
                 }
             }, 2000); // Wait 2 seconds for wallet to connect
         });
@@ -2201,12 +2201,7 @@ Just type or speak your command and I'll help you!`, 'bot');
             }
         }
         
-        // Auto-refresh transaction history every 30 seconds if visible
-        setInterval(() => {
-            if (document.getElementById('transactionHistorySection').style.display !== 'none') {
-                refreshTransactionHistory();
-            }
-        }, 30000);
+
     </script>
 </body>
 </html> 
