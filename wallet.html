@@ -1174,13 +1174,23 @@
 
         function getContactsKey() {
             const walletAddress = getCurrentWalletAddress();
-            return walletAddress ? `wallet_contacts_${walletAddress.toLowerCase()}` : 'wallet_contacts_default';
+            if (!walletAddress) {
+                return null; // Don't allow contacts without a connected wallet
+            }
+            return `wallet_contacts_${walletAddress.toLowerCase()}`;
         }
 
         function loadContacts() {
             const contactsKey = getContactsKey();
-            const contacts = JSON.parse(localStorage.getItem(contactsKey) || '[]');
             const contactsList = document.getElementById('contactsList');
+            
+            // Don't show contacts if no wallet is connected
+            if (!contactsKey) {
+                contactsList.innerHTML = '<div style="text-align: center; padding: 2rem; color: var(--text-secondary);">Please connect your wallet to view contacts</div>';
+                return;
+            }
+            
+            const contacts = JSON.parse(localStorage.getItem(contactsKey) || '[]');
             
             if (contacts.length === 0) {
                 contactsList.innerHTML = '<div style="text-align: center; padding: 2rem; color: var(--text-secondary);">No contacts saved yet. Add your first contact!</div>';
@@ -1237,6 +1247,11 @@
             }
             
             const contactsKey = getContactsKey();
+            if (!contactsKey) {
+                showNotification('Please connect your wallet first', 'error');
+                return;
+            }
+            
             const contacts = JSON.parse(localStorage.getItem(contactsKey) || '[]');
             
             // Check if nickname already exists
@@ -1264,6 +1279,10 @@
         function deleteContact(index) {
             if (confirm('Are you sure you want to delete this contact?')) {
                 const contactsKey = getContactsKey();
+                if (!contactsKey) {
+                    showNotification('Please connect your wallet first', 'error');
+                    return;
+                }
                 const contacts = JSON.parse(localStorage.getItem(contactsKey) || '[]');
                 contacts.splice(index, 1);
                 localStorage.setItem(contactsKey, JSON.stringify(contacts));
@@ -1285,26 +1304,31 @@
         
         function openContactSelector() {
             const contactsKey = getContactsKey();
-            const contacts = JSON.parse(localStorage.getItem(contactsKey) || '[]');
             const selectorList = document.getElementById('contactSelectorList');
             
-            if (contacts.length === 0) {
-                selectorList.innerHTML = '<div style="text-align: center; padding: 2rem; color: var(--text-secondary);">No contacts saved. Add contacts first!</div>';
+            if (!contactsKey) {
+                selectorList.innerHTML = '<div style="text-align: center; padding: 2rem; color: var(--text-secondary);">Please connect your wallet first</div>';
             } else {
-                selectorList.innerHTML = '';
-                contacts.forEach(contact => {
-                    const contactItem = document.createElement('div');
-                    contactItem.className = 'contact-selector-item';
-                    contactItem.onclick = () => sendToContact(contact.address);
-                    contactItem.innerHTML = `
-                        <div class="contact-selector-info">
-                            <div class="contact-selector-name">${contact.nickname}</div>
-                            <div class="contact-selector-address">${contact.address}</div>
-                        </div>
-                        <div style="color: var(--text-secondary);">→</div>
-                    `;
-                    selectorList.appendChild(contactItem);
-                });
+                const contacts = JSON.parse(localStorage.getItem(contactsKey) || '[]');
+                
+                if (contacts.length === 0) {
+                    selectorList.innerHTML = '<div style="text-align: center; padding: 2rem; color: var(--text-secondary);">No contacts saved. Add contacts first!</div>';
+                } else {
+                    selectorList.innerHTML = '';
+                    contacts.forEach(contact => {
+                        const contactItem = document.createElement('div');
+                        contactItem.className = 'contact-selector-item';
+                        contactItem.onclick = () => sendToContact(contact.address);
+                        contactItem.innerHTML = `
+                            <div class="contact-selector-info">
+                                <div class="contact-selector-name">${contact.nickname}</div>
+                                <div class="contact-selector-address">${contact.address}</div>
+                            </div>
+                            <div style="color: var(--text-secondary);">→</div>
+                        `;
+                        selectorList.appendChild(contactItem);
+                    });
+                }
             }
             
             document.getElementById('contactSelectorModal').style.display = 'block';
