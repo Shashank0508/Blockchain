@@ -1078,7 +1078,7 @@
                                 const amount = parseFloat(tx.amount).toFixed(6);
                                 
                                 item.innerHTML = `
-                                    <div class="transaction-info">
+                                    <div class="transaction-info" onclick="showTransactionDetails('${tx.hash}')" style="cursor: pointer;">
                                         <div style="font-weight: 600; color: var(--text-primary);">
                                             ${isCredit ? 'From' : 'To'}: ${displayName}
                                         </div>
@@ -1924,13 +1924,18 @@ Just type or speak your command and I'll help you!`, 'bot');
 
 
         
-        // Function to fetch real transactions from BlockDAG network
+        // Function to fetch real transactions from MetaMask
         async function fetchRealTransactions(walletAddress) {
             try {
-                console.log('Fetching real transactions for wallet:', walletAddress);
+                console.log('Fetching real transactions from MetaMask for wallet:', walletAddress);
+                
+                // Check if MetaMask is available
+                if (!window.ethereum) {
+                    throw new Error('MetaMask is not installed');
+                }
                 
                 // Get transaction count (nonce) for the wallet
-                const nonce = await window.blockchainBuddy.provider.request({
+                const nonce = await window.ethereum.request({
                     method: 'eth_getTransactionCount',
                     params: [walletAddress, 'latest']
                 });
@@ -1938,21 +1943,21 @@ Just type or speak your command and I'll help you!`, 'bot');
                 console.log('Wallet nonce:', parseInt(nonce, 16));
                 
                 // Get recent blocks to scan for transactions
-                const latestBlock = await window.blockchainBuddy.provider.request({
+                const latestBlock = await window.ethereum.request({
                     method: 'eth_blockNumber'
                 });
                 
                 const latestBlockNumber = parseInt(latestBlock, 16);
                 console.log('Latest block:', latestBlockNumber);
                 
-                // Scan last 100 blocks for transactions involving this wallet
+                // Scan last 50 blocks for transactions involving this wallet
                 const transactions = [];
-                const blocksToScan = Math.min(100, latestBlockNumber);
+                const blocksToScan = Math.min(50, latestBlockNumber);
                 
                 for (let i = 0; i < blocksToScan; i++) {
                     const blockNumber = latestBlockNumber - i;
                     try {
-                        const block = await window.blockchainBuddy.provider.request({
+                        const block = await window.ethereum.request({
                             method: 'eth_getBlockByNumber',
                             params: [blockNumber.toString(16), true]
                         });
@@ -1964,21 +1969,27 @@ Just type or speak your command and I'll help you!`, 'bot');
                                     tx.to && tx.to.toLowerCase() === walletAddress.toLowerCase()) {
                                     
                                     // Get transaction receipt for status
-                                    const receipt = await window.blockchainBuddy.provider.request({
+                                    const receipt = await window.ethereum.request({
                                         method: 'eth_getTransactionReceipt',
                                         params: [tx.hash]
                                     });
+                                    
+                                    // Convert wei to BDAG (assuming 18 decimals)
+                                    const amountInWei = parseInt(tx.value, 16);
+                                    const amountInBDAG = amountInWei / Math.pow(10, 18);
                                     
                                     const transaction = {
                                         hash: tx.hash,
                                         from: tx.from,
                                         to: tx.to,
-                                        amount: window.blockchainBuddy.weiToBDAG(tx.value),
+                                        amount: amountInBDAG.toFixed(6),
                                         message: '', // BlockDAG doesn't support messages in transactions
                                         network: 'BlockDAG Testnet',
                                         timestamp: parseInt(block.timestamp, 16) * 1000,
                                         status: receipt && receipt.status === '0x1' ? 'confirmed' : 'pending',
-                                        type: tx.to && tx.to.toLowerCase() === walletAddress.toLowerCase() ? 'credit' : 'debit'
+                                        type: tx.to && tx.to.toLowerCase() === walletAddress.toLowerCase() ? 'credit' : 'debit',
+                                        gasUsed: receipt ? parseInt(receipt.gasUsed, 16) : 0,
+                                        gasPrice: parseInt(tx.gasPrice, 16)
                                     };
                                     
                                     transactions.push(transaction);
@@ -1991,7 +2002,7 @@ Just type or speak your command and I'll help you!`, 'bot');
                     }
                 }
                 
-                console.log('Found', transactions.length, 'real transactions');
+                console.log('Found', transactions.length, 'real transactions from MetaMask');
                 
                 // Save real transactions to localStorage
                 localStorage.setItem('blockdag_transactions', JSON.stringify(transactions));
@@ -2000,7 +2011,7 @@ Just type or speak your command and I'll help you!`, 'bot');
                 await showTransactionHistory();
                 
             } catch (error) {
-                console.error('Error fetching real transactions:', error);
+                console.error('Error fetching real transactions from MetaMask:', error);
                 
                 // Fallback: show message that no transactions found
                 const transactionHistoryDiv = document.getElementById('transactionHistory');
@@ -2015,6 +2026,126 @@ Just type or speak your command and I'll help you!`, 'bot');
                     `;
                 }
             }
+        }
+
+        // Function to show detailed transaction information
+        function showTransactionDetails(txHash) {
+            const transactions = JSON.parse(localStorage.getItem('blockdag_transactions') || '[]');
+            const transaction = transactions.find(tx => tx.hash === txHash);
+            
+            if (!transaction) {
+                showNotification('Transaction not found', 'error');
+                return;
+            }
+            
+            const date = new Date(transaction.timestamp);
+            const formattedDate = date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+            const isCredit = transaction.type === 'credit';
+            const amountColor = isCredit ? 'var(--success-color)' : 'var(--error-color)';
+            const amountPrefix = isCredit ? '+' : '-';
+            
+            // Calculate gas cost in BDAG
+            const gasCostInWei = transaction.gasUsed * transaction.gasPrice;
+            const gasCostInBDAG = gasCostInWei / Math.pow(10, 18);
+            
+            const modalContent = `
+                <div class="modal-content" style="max-width: 600px;">
+                    <h3>📊 Transaction Details</h3>
+                    <div style="margin-bottom: 1rem;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                            <div style="font-weight: 600; font-size: 1.2rem; color: ${amountColor};">
+                                ${amountPrefix}${transaction.amount} BDAG
+                            </div>
+                            <div style="padding: 0.25rem 0.75rem; border-radius: 0.25rem; font-size: 0.875rem; background: ${transaction.status === 'confirmed' ? 'var(--success-color)' : 'var(--warning-color)'}; color: white;">
+                                ${transaction.status === 'confirmed' ? '✅ Confirmed' : '⏳ Pending'}
+                            </div>
+                        </div>
+                        
+                        <div style="background: var(--bg-secondary); padding: 1rem; border-radius: 0.5rem; margin-bottom: 1rem;">
+                            <div style="margin-bottom: 0.5rem;">
+                                <strong>Transaction Hash:</strong>
+                                <div style="font-family: monospace; font-size: 0.875rem; word-break: break-all; color: var(--text-secondary);">
+                                    ${transaction.hash}
+                                </div>
+                            </div>
+                            
+                            <div style="margin-bottom: 0.5rem;">
+                                <strong>From:</strong>
+                                <div style="font-family: monospace; font-size: 0.875rem; word-break: break-all; color: var(--text-secondary);">
+                                    ${transaction.from}
+                                </div>
+                            </div>
+                            
+                            <div style="margin-bottom: 0.5rem;">
+                                <strong>To:</strong>
+                                <div style="font-family: monospace; font-size: 0.875rem; word-break: break-all; color: var(--text-secondary);">
+                                    ${transaction.to}
+                                </div>
+                            </div>
+                            
+                            <div style="margin-bottom: 0.5rem;">
+                                <strong>Network:</strong> ${transaction.network}
+                            </div>
+                            
+                            <div style="margin-bottom: 0.5rem;">
+                                <strong>Date:</strong> ${formattedDate}
+                            </div>
+                            
+                            <div style="margin-bottom: 0.5rem;">
+                                <strong>Gas Used:</strong> ${transaction.gasUsed.toLocaleString()}
+                            </div>
+                            
+                            <div style="margin-bottom: 0.5rem;">
+                                <strong>Gas Price:</strong> ${(transaction.gasPrice / Math.pow(10, 9)).toFixed(9)} Gwei
+                            </div>
+                            
+                            <div style="margin-bottom: 0.5rem;">
+                                <strong>Gas Cost:</strong> ${gasCostInBDAG.toFixed(6)} BDAG
+                            </div>
+                        </div>
+                        
+                        <div style="display: flex; gap: 0.5rem;">
+                            <button class="btn btn-secondary" onclick="copyToClipboard('${transaction.hash}')">
+                                📋 Copy Hash
+                            </button>
+                            <button class="btn btn-secondary" onclick="viewOnExplorer('${transaction.hash}')">
+                                🔍 View on Explorer
+                            </button>
+                        </div>
+                    </div>
+                    <div class="modal-buttons">
+                        <button class="btn btn-secondary" onclick="closeTransactionDetails()">Close</button>
+                    </div>
+                </div>
+            `;
+            
+            // Create modal for transaction details
+            const modal = document.createElement('div');
+            modal.id = 'transactionDetailsModal';
+            modal.className = 'modal';
+            modal.style.display = 'block';
+            modal.innerHTML = modalContent;
+            document.body.appendChild(modal);
+        }
+
+        // Function to close transaction details modal
+        function closeTransactionDetails() {
+            const modal = document.getElementById('transactionDetailsModal');
+            if (modal) {
+                modal.remove();
+            }
+        }
+
+        // Function to copy transaction hash to clipboard
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text);
+            showNotification('Transaction hash copied to clipboard!', 'success');
+        }
+
+        // Function to view transaction on explorer
+        function viewOnExplorer(txHash) {
+            const explorerUrl = `https://testnet-explorer.blockdag.network/tx/${txHash}`;
+            window.open(explorerUrl, '_blank');
         }
         
         // Function to refresh transaction history
