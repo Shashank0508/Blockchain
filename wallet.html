@@ -642,6 +642,13 @@
             word-break: break-all;
         }
     </style>
+    <link rel="stylesheet" href="wallet-messaging.css">
+    
+    <!-- Firebase CDN for Messaging System -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+    <script src="firebase-config.js"></script>
 </head>
 <body>
     <a href="index.html" class="back-btn">← Back to Blockchain Buddy</a>
@@ -735,7 +742,7 @@
         </div>
         
         <div class="wallet-section">
-            <h3>👥 Wallet Contacts</h3>
+            <h3>👥 Wallet Contacts & Messaging</h3>
             <div style="margin-bottom: 1rem;">
                 <div style="display: flex; gap: 1rem; align-items: center; margin-bottom: 1rem;">
                     <div style="flex: 1; position: relative;">
@@ -744,6 +751,9 @@
                     </div>
                     <button class="btn btn-secondary" onclick="openAddContact()">
                         ➕ Add New Contact
+                    </button>
+                    <button class="btn btn-primary" onclick="openMessagingInterface()">
+                        💬 Open Messages
                     </button>
                     <button class="btn btn-secondary" onclick="clearAllContacts()" style="font-size: 0.75rem; padding: 0.5rem;">
                         🗑️ Clear All
@@ -776,6 +786,17 @@
         </div>
     </div>
     
+    <!-- Messaging Interface -->
+    <div id="messagingInterface" class="chat-interface" style="display: none;">
+        <!-- Chat interface will be dynamically populated -->
+    </div>
+
+    <!-- Image Modal for Messages -->
+    <div id="imageModal" class="image-modal" style="display: none;">
+        <button class="close-btn" onclick="closeImageModal()">&times;</button>
+        <img id="modalImage" src="" alt="Full size image">
+    </div>
+
     <!-- Transfer Modal -->
     <div id="transferModal" class="modal">
         <div class="modal-content">
@@ -1287,6 +1308,9 @@
                     <div class="contact-info">
                         <div class="contact-name">${contact.nickname}</div>
                         <div class="contact-address">${contact.address}</div>
+                        <div class="contact-status ${window.walletMessaging && window.walletMessaging.onlineUsers.has(contact.address) ? 'online' : 'offline'}">
+                            ${window.walletMessaging && window.walletMessaging.onlineUsers.has(contact.address) ? '🟢 Online' : '⚫ Offline'}
+                        </div>
                     </div>
                     <div class="contact-actions">
                         <button class="btn btn-primary" onclick="sendToContact('${contact.address}')" style="font-size: 0.75rem;">💸 Send</button>
@@ -1352,7 +1376,13 @@
             contacts.push(newContact);
             localStorage.setItem(contactsKey, JSON.stringify(contacts));
             
-            showNotification('Contact saved successfully!', 'success');
+            // Update messaging system contacts
+            if (window.walletMessaging) {
+                window.walletMessaging.contacts[address] = newContact;
+                window.walletMessaging.saveContacts();
+            }
+            
+            showNotification('Contact saved successfully! You can now message this contact.', 'success');
             closeAddContact();
             loadContacts();
         }
@@ -1439,13 +1469,34 @@
         let currentChatContact = null;
 
         function openChatWithContact(contactName, contactAddress) {
-            currentChatContact = { name: contactName, address: contactAddress };
-            document.getElementById('chatContactName').textContent = `💬 Chat with ${contactName}`;
-            document.getElementById('chatModal').style.display = 'block';
-            document.getElementById('chatMessageInput').focus();
-            
-            // Load chat history
-            loadChatHistory(contactAddress);
+            // Use the new messaging system
+            if (window.walletMessaging) {
+                // Initialize messaging if not already done
+                if (window.blockchainBuddy && window.blockchainBuddy.currentAccount) {
+                    window.walletMessaging.init({
+                        address: window.blockchainBuddy.currentAccount,
+                        nickname: 'You'
+                    });
+                }
+                
+                // Open chat with the contact
+                window.walletMessaging.openChat(contactAddress);
+                
+                // Show the messaging interface
+                const messagingInterface = document.getElementById('messagingInterface');
+                if (messagingInterface) {
+                    messagingInterface.style.display = 'flex';
+                }
+            } else {
+                // Fallback to old chat system
+                currentChatContact = { name: contactName, address: contactAddress };
+                document.getElementById('chatContactName').textContent = `💬 Chat with ${contactName}`;
+                document.getElementById('chatModal').style.display = 'block';
+                document.getElementById('chatMessageInput').focus();
+                
+                // Load chat history
+                loadChatHistory(contactAddress);
+            }
         }
 
         function closeChat() {
@@ -2584,6 +2635,80 @@ Or say "help" to see all my capabilities!`, 'bot');
             }
         });
 
+        // Messaging System Functions
+        function openMessagingInterface() {
+            const messagingInterface = document.getElementById('messagingInterface');
+            if (messagingInterface) {
+                messagingInterface.style.display = 'flex';
+                // Initialize messaging if not already done
+                if (window.blockchainBuddy && window.blockchainBuddy.currentAccount) {
+                    window.walletMessaging.init({
+                        address: window.blockchainBuddy.currentAccount,
+                        nickname: 'You'
+                    });
+                }
+            }
+        }
+
+        function closeMessagingInterface() {
+            const messagingInterface = document.getElementById('messagingInterface');
+            if (messagingInterface) {
+                messagingInterface.style.display = 'none';
+            }
+        }
+
+        function openImageModal(imageSrc) {
+            const modal = document.getElementById('imageModal');
+            const modalImage = document.getElementById('modalImage');
+            if (modal && modalImage) {
+                modalImage.src = imageSrc;
+                modal.style.display = 'flex';
+            }
+        }
+
+        function closeImageModal() {
+            const modal = document.getElementById('imageModal');
+            if (modal) {
+                modal.style.display = 'none';
+            }
+        }
+
+        function downloadFile(fileData, fileName) {
+            const link = document.createElement('a');
+            link.href = fileData;
+            link.download = fileName;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // Enhanced contact functions for messaging
+        function addContactWithMessaging(address, nickname) {
+            // Add to existing contacts
+            const contacts = JSON.parse(localStorage.getItem('contacts') || '[]');
+            const newContact = { address, nickname };
+            
+            // Check if contact already exists
+            const existingIndex = contacts.findIndex(c => c.address === address);
+            if (existingIndex !== -1) {
+                contacts[existingIndex] = newContact;
+            } else {
+                contacts.push(newContact);
+            }
+            
+            localStorage.setItem('contacts', JSON.stringify(contacts));
+            
+            // Update messaging system contacts
+            if (window.walletMessaging) {
+                window.walletMessaging.contacts[address] = newContact;
+                window.walletMessaging.renderContacts();
+            }
+            
+            loadContacts();
+            showNotification(`Contact ${nickname} added successfully!`, 'success');
+        }
+
     </script>
+    <script src="wallet-messaging-demo.js"></script>
 </body>
 </html> 
