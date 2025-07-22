@@ -429,6 +429,28 @@
     <script src="test-transactions.js"></script>
     <script src="connection-test.js"></script>
     
+    <!-- FAQ Toggle Function - Load before HTML elements -->
+    <script>
+        // FAQ Toggle Function
+        function toggleFAQ(element) {
+            const faqItem = element.parentElement;
+            const answer = faqItem.querySelector('.faq-answer');
+            const icon = element.querySelector('.faq-icon');
+            
+            // Toggle active state
+            faqItem.classList.toggle('active');
+            
+            // Toggle answer visibility
+            if (faqItem.classList.contains('active')) {
+                answer.style.maxHeight = answer.scrollHeight + 'px';
+                icon.style.transform = 'rotate(180deg)';
+            } else {
+                answer.style.maxHeight = '0';
+                icon.style.transform = 'rotate(0deg)';
+            }
+        }
+    </script>
+    
     <script>
         // Function to handle wallet connection
         async function connectWallet() {
@@ -524,25 +546,6 @@
             }
         `;
         document.head.appendChild(style);
-
-        // FAQ Toggle Function
-        function toggleFAQ(element) {
-            const faqItem = element.parentElement;
-            const answer = faqItem.querySelector('.faq-answer');
-            const icon = element.querySelector('.faq-icon');
-            
-            // Toggle active state
-            faqItem.classList.toggle('active');
-            
-            // Toggle answer visibility
-            if (faqItem.classList.contains('active')) {
-                answer.style.maxHeight = answer.scrollHeight + 'px';
-                icon.style.transform = 'rotate(180deg)';
-            } else {
-                answer.style.maxHeight = '0';
-                icon.style.transform = 'rotate(0deg)';
-            }
-        }
     </script>
 </body>
 </html> 
