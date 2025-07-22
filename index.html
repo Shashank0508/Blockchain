@@ -115,6 +115,98 @@
                 </div>
             </section>
 
+            <!-- FAQ Section -->
+            <section class="faq-section">
+                <div class="faq-container">
+                    <h2 class="faq-title">Frequently Asked Questions</h2>
+                    <div class="faq-list">
+                        <div class="faq-item">
+                            <div class="faq-question" onclick="toggleFAQ(this)">
+                                <h3>What is Blockchain Buddy?</h3>
+                                <svg class="faq-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M6 9l6 6 6-6"/>
+                                </svg>
+                            </div>
+                            <div class="faq-answer">
+                                <p>Blockchain Buddy is an AI-powered wallet application that makes interacting with the BlockDAG network as easy as having a conversation. It combines secure wallet functionality with intelligent messaging, file sharing, and transaction management through natural language processing.</p>
+                            </div>
+                        </div>
+
+                        <div class="faq-item">
+                            <div class="faq-question" onclick="toggleFAQ(this)">
+                                <h3>How do I connect my wallet?</h3>
+                                <svg class="faq-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M6 9l6 6 6-6"/>
+                                </svg>
+                            </div>
+                            <div class="faq-answer">
+                                <p>To connect your wallet, click the "Connect Wallet" button on the homepage. Make sure you have MetaMask installed in your browser. The application supports BlockDAG Testnet for testing and development purposes. Once connected, you can access all wallet features including sending BDAG, managing contacts, and using the AI chatbot.</p>
+                            </div>
+                        </div>
+
+                        <div class="faq-item">
+                            <div class="faq-question" onclick="toggleFAQ(this)">
+                                <h3>What are the messaging features?</h3>
+                                <svg class="faq-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M6 9l6 6 6-6"/>
+                                </svg>
+                            </div>
+                            <div class="faq-answer">
+                                <p>The messaging system includes encrypted text messages, file sharing (images, documents, any file type), transaction notifications, and real-time chat with contacts. All messages are encrypted using AES-GCM encryption for security. You can add contacts by wallet address and see their online/offline status.</p>
+                            </div>
+                        </div>
+
+                        <div class="faq-item">
+                            <div class="faq-question" onclick="toggleFAQ(this)">
+                                <h3>How does the AI chatbot work?</h3>
+                                <svg class="faq-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M6 9l6 6 6-6"/>
+                                </svg>
+                            </div>
+                            <div class="faq-answer">
+                                <p>The AI chatbot (🤖) helps you with wallet operations using natural language. You can ask it to send BDAG, check your balance, get test tokens, view transaction history, add contacts, and more. It also supports voice commands for hands-free operation. Just click the chatbot button in the bottom right corner to start a conversation.</p>
+                            </div>
+                        </div>
+
+                        <div class="faq-item">
+                            <div class="faq-question" onclick="toggleFAQ(this)">
+                                <h3>Is my data secure?</h3>
+                                <svg class="faq-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M6 9l6 6 6-6"/>
+                                </svg>
+                            </div>
+                            <div class="faq-answer">
+                                <p>Yes, your data is highly secure. All messages are encrypted using AES-GCM encryption with unique keys per user. Wallet connections use MetaMask's secure protocols. The application works in local mode by default, meaning your data stays on your device. For real-time messaging, you can optionally configure Firebase with your own credentials.</p>
+                            </div>
+                        </div>
+
+                        <div class="faq-item">
+                            <div class="faq-question" onclick="toggleFAQ(this)">
+                                <h3>How do I get test BDAG tokens?</h3>
+                                <svg class="faq-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M6 9l6 6 6-6"/>
+                                </svg>
+                            </div>
+                            <div class="faq-answer">
+                                <p>To get test BDAG tokens, connect your wallet first, then click the "Get Test BDAG" button in the wallet interface. This will add test tokens to your wallet for development and testing purposes. These tokens are only valid on the BlockDAG Testnet and have no real value.</p>
+                            </div>
+                        </div>
+
+                        <div class="faq-item">
+                            <div class="faq-question" onclick="toggleFAQ(this)">
+                                <h3>What networks are supported?</h3>
+                                <svg class="faq-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M6 9l6 6 6-6"/>
+                                </svg>
+                            </div>
+                            <div class="faq-answer">
+                                <p>Currently, Blockchain Buddy supports the BlockDAG Testnet for development and testing. The application is designed to work with MetaMask and other Web3 wallets. The messaging system works in local mode by default, with optional Firebase integration for real-time features across different users.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
             <!-- BDAG Transfer Interface -->
             <section class="transfer-section" id="transferSection" style="display: none;">
                 <div class="transfer-container">
@@ -432,6 +524,25 @@
             }
         `;
         document.head.appendChild(style);
+
+        // FAQ Toggle Function
+        function toggleFAQ(element) {
+            const faqItem = element.parentElement;
+            const answer = faqItem.querySelector('.faq-answer');
+            const icon = element.querySelector('.faq-icon');
+            
+            // Toggle active state
+            faqItem.classList.toggle('active');
+            
+            // Toggle answer visibility
+            if (faqItem.classList.contains('active')) {
+                answer.style.maxHeight = answer.scrollHeight + 'px';
+                icon.style.transform = 'rotate(180deg)';
+            } else {
+                answer.style.maxHeight = '0';
+                icon.style.transform = 'rotate(0deg)';
+            }
+        }
     </script>
 </body>
 </html> 
