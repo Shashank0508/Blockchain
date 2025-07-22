@@ -1,0 +1,69 @@
+{
+  "rules": {
+    "users": {
+      ".read": "auth != null",
+      "$uid": {
+        ".write": "$uid === auth.uid",
+        "profile": {
+          ".validate": "newData.hasChildren(['email', 'displayName'])"
+        },
+        "chatMessages": {
+          "$messageId": {
+            ".validate": "newData.hasChildren(['type', 'content', 'timestamp']) && newData.child('timestamp').isNumber()"
+          }
+        },
+        "transactions": {
+          "$transactionId": {
+            ".validate": "newData.hasChildren(['type', 'amount', 'timestamp']) && newData.child('amount').isNumber() && newData.child('timestamp').isNumber()"
+          }
+        },
+        "wallet": {
+          "balance": {
+            ".validate": "newData.isNumber() && newData.val() >= 0"
+          },
+          "address": {
+            ".validate": "newData.isString()"
+          }
+        }
+      }
+    },
+    "friendRequests": {
+      "$recipientId": {
+        ".read": "$recipientId === auth.uid",
+        "$senderId": {
+          ".write": "$senderId === auth.uid || $recipientId === auth.uid",
+          ".validate": "newData.hasChildren(['from', 'to', 'timestamp']) && newData.child('from').val() === $senderId && newData.child('to').val() === $recipientId"
+        }
+      }
+    },
+    "friends": {
+      "$userId": {
+        ".read": "$userId === auth.uid",
+        ".write": "$userId === auth.uid",
+        "$friendId": {
+          ".validate": "newData.hasChildren(['timestamp', 'status'])"
+        }
+      }
+    },
+    "chats": {
+      "$chatId": {
+        ".read": "auth != null",
+        ".write": "auth != null",
+        "$messageId": {
+          ".validate": "newData.hasChildren(['content', 'sender', 'timestamp']) && newData.child('sender').val() === auth.uid"
+        }
+      }
+    },
+    "globalChat": {
+      ".read": "auth != null",
+      "$messageId": {
+        ".write": "auth != null && (!data.exists() || data.child('userId').val() === auth.uid)",
+        ".validate": "newData.hasChildren(['message', 'timestamp', 'userId', 'displayName']) && newData.child('userId').val() === auth.uid"
+      }
+    },
+    "stats": {
+      ".read": "auth != null",
+      ".write": false
+    }
+  }
+} 

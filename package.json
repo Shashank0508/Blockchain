@@ -1,0 +1,28 @@
+{
+  "name": "blockchain-buddy-wallet",
+  "version": "1.0.0",
+  "description": "A blockchain wallet application with AI chatbot and voice commands",
+  "main": "index.html",
+  "scripts": {
+    "start": "npx http-server -p $PORT -c-1",
+    "dev": "python -m http.server 8000",
+    "build": "echo 'No build step required for static site'",
+    "test": "echo 'No tests specified'"
+  },
+  "keywords": [
+    "blockchain",
+    "wallet",
+    "cryptocurrency",
+    "ai",
+    "chatbot",
+    "voice-commands"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "dependencies": {
+    "http-server": "^14.1.1"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  }
+} 

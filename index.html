@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blockchain Buddy</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Firebase CDN -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-analytics-compat.js"></script>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">
+                    <h1 class="logo-text">Blockchain Buddy</h1>
+                </div>
+                <div class="header-actions">
+                    <div class="network-status">
+                        <span class="status-dot"></span>
+                        <span class="status-text" data-translate="network-status">Connected to BlockDAG Testnet</span>
+                    </div>
+                    <div class="language-selector">
+                        <select id="languageSelect" class="language-select">
+                            <option value="en">🇺🇸 English</option>
+                            <option value="hi">🇮🇳 हिंदी</option>
+                            <option value="zh">🇨🇳 中文</option>
+                            <option value="de">🇩🇪 Deutsch</option>
+                            <option value="ja">🇯🇵 日本語</option>
+                            <option value="es">🇪🇸 Español</option>
+                            <option value="ko">🇰🇷 한국어</option>
+                            <option value="fr">🇫🇷 Français</option>
+                        </select>
+                    </div>
+
+                    <button class="theme-toggle" id="themeToggle" title="Toggle theme">
+                        <svg class="theme-icon sun-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="5"/>
+                            <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
+                        </svg>
+                        <svg class="theme-icon moon-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+                        </svg>
+                    </button>
+                    <button class="btn btn-primary" id="connectWalletBtn" data-translate="connect-wallet">Connect Wallet</button>
+                    <button class="btn btn-secondary" id="openWalletBtn" onclick="openWalletPage()" style="display: none;">💰 Open Wallet</button>
+                    <button class="btn btn-secondary" id="loginBtn" data-translate="login" style="display: none;">Login</button>
+                    <div class="user-profile" id="userProfile" style="display: none;">
+                        <span id="userDisplayName"></span>
+                        <button class="btn btn-secondary" id="logoutBtn">Logout</button>
+                    </div>
+                </div>
+                
+
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main">
+        <div class="container">
+            <!-- Hero Section -->
+            <section class="hero">
+                <h2 class="hero-title" data-translate="hero-title">Welcome to Blockchain Buddy</h2>
+                <p class="hero-description" data-translate="hero-description">
+                    Your AI-powered companion for seamless BlockDAG network interactions. 
+                    Make crypto transactions as easy as having a conversation.
+                </p>
+            </section>
+
+            <!-- Features Grid -->
+            <section class="features">
+                <div class="feature-card chat-feature-card" id="chatFeatureCard">
+                    <div class="feature-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+                        </svg>
+                    </div>
+                    <h3 class="feature-title" data-translate="chat-interface-title">Chat Interface</h3>
+                    <p class="feature-description" data-translate="chat-interface-desc">Natural language commands for blockchain operations</p>
+                    <button class="feature-button" data-translate="try-chat">Try Chat Interface</button>
+                </div>
+
+                <div class="feature-card wallet-feature-card" id="walletFeatureCard">
+                    <div class="feature-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
+                        </svg>
+                    </div>
+                    <h3 class="feature-title" data-translate="secure-wallet-title">Secure Wallet</h3>
+                    <p class="feature-description" data-translate="secure-wallet-desc">Safe and secure BlockDAG wallet integration</p>
+                    <button class="feature-button" data-translate="connect-wallet">Connect Wallet</button>
+                </div>
+
+                <div class="feature-card transactions-feature-card" id="transactionsFeatureCard">
+                    <div class="feature-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                        </svg>
+                    </div>
+                    <h3 class="feature-title" data-translate="fast-transactions-title">Fast Transactions</h3>
+                    <p class="feature-description" data-translate="fast-transactions-desc">Lightning-fast transactions with BlockDAG technology</p>
+                    <button class="feature-button" data-translate="view-transactions">View Transactions</button>
+                </div>
+            </section>
+
+            <!-- CTA Section -->
+            <section class="cta-section">
+                <div class="cta-card">
+                    <h3 class="cta-title" data-translate="cta-title">Ready to Get Started?</h3>
+                    <p class="cta-description" data-translate="cta-description">
+                        Connect your wallet to begin interacting with the BlockDAG network through our AI-powered interface.
+                    </p>
+                    <div class="cta-buttons">
+                        <button class="btn btn-primary" id="ctaConnectBtn" data-translate="connect-wallet">Connect Wallet</button>
+                        <button class="btn btn-secondary" id="learnMoreBtn" data-translate="learn-more">Learn More</button>
+                        <button class="btn btn-chat" id="chatFriendsBtn" title="Chat with Friends">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                                <path d="M14 9h.01M10 9h.01M6 9h.01"/>
+                            </svg>
+                            Chat with Friends
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- BDAG Transfer Interface -->
+            <section class="transfer-section" id="transferSection" style="display: none;">
+                <div class="transfer-container">
+                    <div class="transfer-header">
+                        <h3>Send BDAG Tokens</h3>
+                        <button class="btn btn-secondary" onclick="closeTransfer()">✕</button>
+                    </div>
+                    <div class="transfer-form">
+                        <div class="form-group">
+                            <label for="recipientAddress">Recipient Address:</label>
+                            <input type="text" id="recipientAddress" placeholder="0x..." class="form-input">
+                        </div>
+                        <div class="form-group">
+                            <label for="bdagAmount">Amount (BDAG):</label>
+                            <input type="number" id="bdagAmount" placeholder="0.0" step="0.001" class="form-input">
+                        </div>
+                        <div class="form-group">
+                            <label for="transactionMessage">Message (Optional):</label>
+                            <textarea id="transactionMessage" placeholder="Add a message to your transaction..." class="form-textarea"></textarea>
+                        </div>
+                        <div class="transfer-summary" id="transferSummary" style="display: none;">
+                            <h4>Transaction Summary</h4>
+                            <div class="summary-item">
+                                <span>Recipient:</span>
+                                <span id="summaryRecipient"></span>
+                            </div>
+                            <div class="summary-item">
+                                <span>Amount:</span>
+                                <span id="summaryAmount"></span>
+                            </div>
+                            <div class="summary-item">
+                                <span>Gas Cost:</span>
+                                <span id="summaryGas"></span>
+                            </div>
+                            <div class="summary-item total">
+                                <span>Total:</span>
+                                <span id="summaryTotal"></span>
+                            </div>
+                        </div>
+                        <div class="transfer-actions">
+                            <button class="btn btn-secondary" onclick="estimateGas()">Estimate Gas</button>
+                            <button class="btn btn-primary" onclick="sendBDAGTransaction()">Send BDAG</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Enhanced Chat Interface (Hidden by default) -->
+            <section class="chat-section" id="chatSection" style="display: none;">
+                <div class="chat-container">
+                    <div class="chat-header">
+                        <div class="chat-header-info">
+                            <h3 data-translate="chat-title">Chat with Blockchain Buddy</h3>
+                            <span class="chat-status">
+                                <span class="status-dot"></span>
+                                <span data-translate="online-status">Online</span>
+                            </span>
+                        </div>
+                        <div class="chat-header-actions">
+                            <button class="btn btn-secondary" id="historyBtn" title="Transaction History" data-translate="history-title">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                </svg>
+                            </button>
+                            <button class="btn btn-secondary" id="clearChatBtn" title="Clear Chat">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
+                                </svg>
+                            </button>
+                            <button class="btn btn-secondary" id="minimizeChatBtn" title="Minimize">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M6 9l6 6 6-6"/>
+                                </svg>
+                            </button>
+                            <button class="btn btn-secondary" id="closeChatBtn" title="Close">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M18 6L6 18M6 6l12 12"/>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="chat-messages" id="chatMessages">
+                        <div class="message bot-message">
+                            <div class="message-avatar">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                                    <circle cx="12" cy="7" r="4"/>
+                                </svg>
+                            </div>
+                            <div class="message-content" data-translate="welcome-message">
+                                Hi! I'm your Blockchain Buddy. How can I help you today? You can ask me to connect your MetaMask wallet, check your balance, send tokens, or discover dApps.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="chat-input">
+                        <input type="text" id="messageInput" placeholder="Type your message here..." class="input-field" data-translate-placeholder="message-placeholder">
+                        <button class="btn btn-primary" id="sendBtn">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="chat-menu" id="chatMenu">
+                        <div class="menu-header">
+                            <h4 data-translate="available-services">Available Services:</h4>
+                        </div>
+                        <div class="menu-options">
+                            <div class="menu-option" data-suggestion="Check my wallet balance">
+                                <div class="option-icon">💰</div>
+                                <div class="option-content">
+                                    <div class="option-title" data-translate="balance-inquiries">Balance Inquiries</div>
+                                    <div class="option-description" data-translate="check-wallet">Check your wallet</div>
+                                </div>
+                            </div>
+                            <div class="menu-option" data-suggestion="Send BDAG safely to someone">
+                                <div class="option-icon">💸</div>
+                                <div class="option-content">
+                                    <div class="option-title" data-translate="token-transfers">Token Transfers</div>
+                                    <div class="option-description" data-translate="send-bdag">Send BDAG safely</div>
+                                </div>
+                            </div>
+                            <div class="menu-option" data-suggestion="Find the best apps">
+                                <div class="option-icon">🔍</div>
+                                <div class="option-content">
+                                    <div class="option-title" data-translate="dapp-recommendations">dApp Recommendations</div>
+                                    <div class="option-description" data-translate="find-best-apps">Find the best apps</div>
+                                </div>
+                            </div>
+                            <div class="menu-option" data-suggestion="Learn the technology">
+                                <div class="option-icon">📚</div>
+                                <div class="option-content">
+                                    <div class="option-title" data-translate="blockdag-education">BlockDAG Education</div>
+                                    <div class="option-description" data-translate="learn-technology">Learn the technology</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="menu-divider"></div>
+                        <div class="detailed-services">
+                            <div class="service-header">
+                                <h5 data-translate="quick-access">Quick Access:</h5>
+                            </div>
+                            <div class="service-list">
+                                <div class="service-item" data-suggestion="Balance inquiries - Check your wallet">
+                                    <span class="service-bullet">•</span>
+                                    <span class="service-text" data-translate="balance-inquiries-desc">Balance inquiries - Check your wallet</span>
+                                </div>
+                                <div class="service-item" data-suggestion="Token transfers - Send BDAG safely">
+                                    <span class="service-bullet">•</span>
+                                    <span class="service-text" data-translate="token-transfers-desc">Token transfers - Send BDAG safely</span>
+                                </div>
+                                <div class="service-item" data-suggestion="dApp recommendations - Find the best apps">
+                                    <span class="service-bullet">•</span>
+                                    <span class="service-text" data-translate="dapp-recommendations-desc">dApp recommendations - Find the best apps</span>
+                                </div>
+                                <div class="service-item" data-suggestion="BlockDAG education - Learn the technology">
+                                    <span class="service-bullet">•</span>
+                                    <span class="service-text" data-translate="blockdag-education-desc">BlockDAG education - Learn the technology</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="chat-suggestions" id="chatSuggestions">
+                        <div class="suggestion-chip" data-suggestion="Connect MetaMask wallet" data-translate="connect-chip">🔗 Connect</div>
+                        <div class="suggestion-chip" data-suggestion="What's my balance?" data-translate="balance-chip">💰 Balance</div>
+                        <div class="suggestion-chip" data-suggestion="Send tokens" data-translate="transfer-chip">💸 Transfer</div>
+                        <div class="suggestion-chip" data-suggestion="Convert BDAG to USD" data-translate="convert-chip">💱 Convert</div>
+                        <div class="suggestion-chip" data-suggestion="Discover dApps" data-translate="dapps-chip">🔍 dApps</div>
+                        <div class="suggestion-chip" data-suggestion="Help me" data-translate="help-chip">❓ Help</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Transaction History Modal -->
+            <div class="history-modal" id="historyModal" style="display: none;">
+                <div class="history-modal-content">
+                    <div class="history-modal-header">
+                        <h3 data-translate="transaction-history">Transaction History</h3>
+                        <button class="history-close-btn" id="historyCloseBtn">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M18 6L6 18M6 6l12 12"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="history-filters">
+                        <div class="filter-group">
+                            <label data-translate="filter-type">Type:</label>
+                            <select id="historyTypeFilter" class="filter-select">
+                                <option value="all" data-translate="all-transactions">All Transactions</option>
+                                <option value="sent" data-translate="sent-transactions">Sent</option>
+                                <option value="received" data-translate="received-transactions">Received</option>
+                                <option value="converted" data-translate="converted-transactions">Converted</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label data-translate="search-transactions">Search:</label>
+                            <input type="text" id="historySearchInput" class="filter-input" placeholder="Search transactions..." data-translate-placeholder="search-placeholder">
+                        </div>
+                    </div>
+                    <div class="history-content" id="historyContent">
+                        <div class="history-loading" id="historyLoading">
+                            <div class="loading-spinner"></div>
+                            <span data-translate="loading-history">Loading transaction history...</span>
+                        </div>
+                        <div class="history-list" id="historyList"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <p data-translate="footer-text">&copy; 2025 Blockchain Buddy. Built for BlockDAG Hackathon 2025.</p>
+        </div>
+    </footer>
+
+    <script src="blockchain-integration.js"></script>
+    <script src="script.js"></script>
+    <script src="test-transactions.js"></script>
+    <script src="connection-test.js"></script>
+</body>
+</html> 

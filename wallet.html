@@ -1,0 +1,2010 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blockchain Buddy - Wallet</title>
+    <style>
+        :root {
+            --bg-primary: #1a1a1a;
+            --bg-secondary: #2d2d2d;
+            --bg-tertiary: #3a3a3a;
+            --text-primary: #ffffff;
+            --text-secondary: #b3b3b3;
+            --border-color: #404040;
+            --accent-blue: #3b82f6;
+            --accent-green: #10b981;
+            --accent-orange: #f59e0b;
+            --accent-red: #ef4444;
+        }
+
+        :root[data-theme="light"] {
+            --bg-primary: #ffffff;
+            --bg-secondary: #f8f9fa;
+            --bg-tertiary: #e9ecef;
+            --text-primary: #212529;
+            --text-secondary: #6c757d;
+            --border-color: #dee2e6;
+            --accent-blue: #3b82f6;
+            --accent-green: #10b981;
+            --accent-orange: #f59e0b;
+            --accent-red: #ef4444;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        .wallet-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: var(--bg-secondary);
+            border-radius: 1rem;
+            padding: 2rem;
+            box-shadow: 0 8px 25px -5px rgba(59, 130, 246, 0.2);
+            border: 2px solid var(--accent-blue);
+        }
+        
+        .wallet-header {
+            text-align: center;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid var(--border-color);
+            position: relative;
+        }
+
+        .theme-toggle {
+            position: absolute;
+            top: 0;
+            left: 0;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 1.2rem;
+            min-width: 50px;
+            text-align: center;
+        }
+
+        .theme-toggle:hover {
+            background: var(--bg-primary);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .chatbot-toggle {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: var(--accent-blue);
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-size: 1.5rem;
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+
+        .chatbot-toggle:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
+        }
+
+        .chatbot-container {
+            position: fixed;
+            bottom: 90px;
+            right: 20px;
+            width: 350px;
+            height: 500px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 1rem;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+            display: none;
+            flex-direction: column;
+            z-index: 1000;
+        }
+
+        .chatbot-header {
+            padding: 1rem;
+            background: var(--accent-blue);
+            color: white;
+            border-radius: 1rem 1rem 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .chatbot-header h3 {
+            margin: 0;
+            font-size: 1.1rem;
+        }
+
+        .chatbot-close {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.2rem;
+            cursor: pointer;
+            padding: 0.25rem;
+        }
+
+        .chatbot-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1rem;
+            background: var(--bg-primary);
+        }
+
+        .chatbot-message {
+            margin-bottom: 1rem;
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            max-width: 80%;
+            word-wrap: break-word;
+        }
+
+        .chatbot-message.user {
+            background: var(--accent-blue);
+            color: white;
+            margin-left: auto;
+            text-align: right;
+        }
+
+        .chatbot-message.bot {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            margin-right: auto;
+        }
+
+        .chatbot-input-container {
+            padding: 1rem;
+            background: var(--bg-secondary);
+            border-radius: 0 0 1rem 1rem;
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .chatbot-input {
+            flex: 1;
+            padding: 0.75rem;
+            border: 1px solid var(--border-color);
+            border-radius: 0.5rem;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-size: 0.9rem;
+        }
+
+        .chatbot-send {
+            padding: 0.75rem 1rem;
+            background: var(--accent-blue);
+            color: white;
+            border: none;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+
+        .chatbot-voice {
+            padding: 0.75rem;
+            background: var(--accent-green);
+            color: white;
+            border: none;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.2s ease;
+        }
+
+        .chatbot-voice:hover {
+            background: #059669;
+            transform: scale(1.05);
+        }
+
+        .chatbot-voice.recording {
+            background: var(--accent-red);
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        .voice-status {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: var(--bg-secondary);
+            border: 2px solid var(--accent-green);
+            border-radius: 1rem;
+            padding: 2rem;
+            text-align: center;
+            z-index: 2000;
+            display: none;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+        }
+
+        .voice-status.recording {
+            border-color: var(--accent-red);
+            animation: pulse 1.5s infinite;
+        }
+        
+        .wallet-header h1 {
+            color: var(--accent-blue);
+            margin: 0;
+            font-size: 2.5rem;
+        }
+        
+        .wallet-header .status {
+            display: inline-block;
+            background: var(--accent-green);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 2rem;
+            margin-top: 1rem;
+            font-weight: 600;
+        }
+        
+        .wallet-section {
+            margin-bottom: 2rem;
+            padding: 1.5rem;
+            background: var(--bg-tertiary);
+            border-radius: 0.75rem;
+            border: 1px solid var(--border-color);
+        }
+        
+        .wallet-section h3 {
+            margin: 0 0 1rem 0;
+            color: var(--text-primary);
+            font-size: 1.25rem;
+        }
+        
+        .wallet-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding: 1rem;
+            background: var(--bg-primary);
+            border-radius: 0.5rem;
+            border: 1px solid var(--border-color);
+        }
+        
+        .wallet-item .label {
+            font-weight: 600;
+            color: var(--text-secondary);
+            min-width: 120px;
+            margin-right: 1rem;
+        }
+        
+        .wallet-item .value {
+            flex: 1;
+            font-family: monospace;
+            font-size: 1rem;
+            color: var(--text-primary);
+            word-break: break-all;
+        }
+        
+        .wallet-item .balance {
+            font-weight: 700;
+            color: var(--accent-green);
+            font-size: 1.5rem;
+        }
+        
+        .wallet-item .network {
+            color: var(--accent-green);
+            font-weight: 600;
+        }
+        
+        .wallet-actions {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+        
+        .btn {
+            padding: 1rem 1.5rem;
+            border: none;
+            border-radius: 0.5rem;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+        
+        .btn-primary {
+            background: var(--accent-blue);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #2563eb;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+        }
+        
+        .btn-secondary {
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+        }
+        
+        .btn-secondary:hover {
+            background: var(--bg-tertiary);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        
+        .btn-success {
+            background: var(--accent-green);
+            color: white;
+        }
+        
+        .btn-success:hover {
+            background: #059669;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+        }
+        
+        .back-btn {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+            padding: 0.75rem 1rem;
+            border-radius: 0.5rem;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.2s ease;
+        }
+        
+        .back-btn:hover {
+            background: var(--bg-tertiary);
+            transform: translateY(-2px);
+        }
+        
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 1rem 1.5rem;
+            border-radius: 0.5rem;
+            color: white;
+            font-weight: 600;
+            z-index: 1000;
+            animation: slideIn 0.3s ease;
+        }
+        
+        .notification.success {
+            background: var(--accent-green);
+        }
+        
+        .notification.error {
+            background: var(--accent-red);
+        }
+        
+        .notification.info {
+            background: var(--accent-blue);
+        }
+        
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        
+        .transaction-history {
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid var(--border-color);
+            border-radius: 0.5rem;
+            background: var(--bg-primary);
+            padding: 0.5rem;
+        }
+        
+        .transaction-history::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        .transaction-history::-webkit-scrollbar-track {
+            background: var(--bg-tertiary);
+            border-radius: 4px;
+        }
+        
+        .transaction-history::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border-radius: 4px;
+        }
+        
+        .transaction-history::-webkit-scrollbar-thumb:hover {
+            background: var(--text-secondary);
+        }
+        
+        .transaction-item {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .transaction-item:last-child {
+            border-bottom: none;
+        }
+        
+        .transaction-info {
+            flex: 1;
+        }
+        
+        .transaction-amount {
+            font-weight: 600;
+        }
+        
+        .transaction-amount.credit {
+            color: var(--accent-green);
+        }
+        
+        .transaction-amount.debit {
+            color: var(--accent-red);
+        }
+        
+        .transaction-status {
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        
+        .status-pending {
+            background: var(--accent-orange);
+            color: white;
+        }
+        
+        .status-confirmed {
+            background: var(--accent-green);
+            color: white;
+        }
+        
+        .status-failed {
+            background: var(--accent-red);
+            color: white;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            z-index: 1000;
+        }
+
+        .modal-content {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: var(--bg-secondary);
+            padding: 2rem;
+            border-radius: 1rem;
+            min-width: 400px;
+            border: 1px solid var(--border-color);
+        }
+
+        .modal input {
+            width: 100%;
+            padding: 0.75rem;
+            margin: 0.5rem 0 1rem 0;
+            border-radius: 0.5rem;
+            border: 1px solid var(--border-color);
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-size: 1rem;
+        }
+
+        .modal label {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            color: var(--text-secondary);
+        }
+        
+        .contact-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem;
+            margin-bottom: 0.5rem;
+            background: var(--bg-primary);
+            border-radius: 0.5rem;
+            border: 1px solid var(--border-color);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .contact-item:hover {
+            background: var(--bg-tertiary);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        
+        .contact-info {
+            flex: 1;
+        }
+        
+        .contact-name {
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 0.25rem;
+        }
+        
+        .contact-address {
+            font-family: monospace;
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            word-break: break-all;
+        }
+        
+        .contact-notes {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            margin-top: 0.25rem;
+        }
+        
+        .contact-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+        
+        .contact-actions button {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.75rem;
+            border-radius: 0.25rem;
+        }
+        
+        .contact-selector-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem;
+            margin-bottom: 0.5rem;
+            background: var(--bg-primary);
+            border-radius: 0.5rem;
+            border: 1px solid var(--border-color);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .contact-selector-item:hover {
+            background: var(--bg-tertiary);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        
+        .contact-selector-info {
+            flex: 1;
+        }
+        
+        .contact-selector-name {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        
+        .contact-selector-address {
+            font-family: monospace;
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            word-break: break-all;
+        }
+    </style>
+</head>
+<body>
+    <a href="index.html" class="back-btn">← Back to Blockchain Buddy</a>
+    
+    <!-- Chatbot Toggle Button -->
+    <button class="chatbot-toggle" onclick="toggleChatbot()" title="AI Wallet Assistant">🤖</button>
+    
+    <!-- Chatbot Container -->
+    <div class="chatbot-container" id="chatbotContainer">
+        <div class="chatbot-header">
+            <h3>🤖 AI Wallet Assistant</h3>
+            <button class="chatbot-close" onclick="toggleChatbot()">✕</button>
+        </div>
+        <div class="chatbot-messages" id="chatbotMessages">
+            <div class="chatbot-message bot">
+                <div>👋 Hello! I'm your AI Wallet Assistant. I can help you with:</div>
+                <div style="margin-top: 0.5rem;">
+                    • Send BDAG to contacts<br>
+                    • Check wallet balance<br>
+                    • Get test tokens<br>
+                    • View transaction history<br>
+                    • Search contacts<br>
+                    • Add new contacts<br>
+                    • Switch themes
+                </div>
+                <div style="margin-top: 0.5rem;">Just type your command or use voice commands! 🎤</div>
+            </div>
+        </div>
+        <div class="chatbot-input-container">
+            <input type="text" class="chatbot-input" id="chatbotInput" placeholder="Type your command or speak..." onkeypress="handleChatbotKeyPress(event)">
+            <button class="chatbot-voice" onclick="toggleVoiceRecognition()" id="voiceButton" title="Voice Command">🎤</button>
+            <button class="chatbot-send" onclick="sendChatbotMessage()">Send</button>
+        </div>
+    </div>
+
+    <!-- Voice Status Modal -->
+    <div class="voice-status" id="voiceStatus">
+        <div style="font-size: 3rem; margin-bottom: 1rem;">🎤</div>
+        <div style="font-weight: 600; margin-bottom: 0.5rem;">Listening...</div>
+        <div style="font-size: 0.875rem; color: var(--text-secondary);">Speak your command clearly</div>
+    </div>
+    
+    <div class="wallet-container">
+        <div class="wallet-header">
+            <h1>💰 My Wallet</h1>
+            <div class="status" id="connectionStatus">Loading...</div>
+            <button class="theme-toggle" onclick="toggleTheme()" id="themeToggle" title="Toggle Light/Dark Mode">🌙</button>
+        </div>
+        
+        <div class="wallet-section">
+            <h3>📋 Wallet Information</h3>
+            <div class="wallet-item">
+                <span class="label">Address:</span>
+                <span class="value" id="walletAddress">Loading...</span>
+                <button class="btn btn-secondary" onclick="copyAddress()" style="margin-left: 1rem; padding: 0.5rem;">📋 Copy</button>
+            </div>
+            <div class="wallet-item">
+                <span class="label">Balance:</span>
+                <span class="value balance" id="walletBalance">Loading...</span>
+                <button class="btn btn-secondary" onclick="refreshBalance()" style="margin-left: 1rem; padding: 0.5rem;">🔄 Refresh</button>
+            </div>
+            <div class="wallet-item">
+                <span class="label">Network:</span>
+                <span class="value network" id="networkStatus">BlockDAG Testnet</span>
+            </div>
+        </div>
+        
+        <div class="wallet-section">
+            <h3>💸 Quick Actions</h3>
+            <div class="wallet-actions">
+                <button class="btn btn-success" onclick="getTestTokens()">
+                    🚰 Get Test BDAG
+                </button>
+                <button class="btn btn-primary" onclick="openTransfer()">
+                    💸 Send BDAG
+                </button>
+                <button class="btn btn-secondary" onclick="openExplorer()">
+                    🔍 View on Explorer
+                </button>
+                <button class="btn btn-secondary" onclick="showTransactionHistory()">
+                    📊 Transaction History
+                </button>
+            </div>
+        </div>
+        
+        <div class="wallet-section">
+            <h3>👥 Wallet Contacts</h3>
+            <div style="margin-bottom: 1rem;">
+                <div style="display: flex; gap: 1rem; align-items: center; margin-bottom: 1rem;">
+                    <div style="flex: 1; position: relative;">
+                        <input type="text" id="contactSearchInput" placeholder="🔍 Search contacts by nickname..." style="width: 100%; padding: 0.75rem; border-radius: 0.5rem; border: 1px solid var(--border-color); background: var(--bg-primary); color: var(--text-primary); font-size: 1rem;" oninput="searchContacts()">
+                        <div id="searchResults" style="position: absolute; top: 100%; left: 0; right: 0; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 0.5rem; max-height: 200px; overflow-y: auto; z-index: 1000; display: none; margin-top: 0.25rem;"></div>
+                    </div>
+                    <button class="btn btn-secondary" onclick="openAddContact()">
+                        ➕ Add New Contact
+                    </button>
+                </div>
+            </div>
+            <div id="contactsList">
+                <div class="loading">Loading contacts...</div>
+            </div>
+        </div>
+        
+        <div class="wallet-section" id="transactionHistorySection" style="display: none;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                <h3>📊 Recent Transactions</h3>
+                <div style="display: flex; gap: 0.5rem;">
+                    <button class="btn btn-primary" onclick="fetchRealTransactionsFromUI()" style="padding: 0.5rem; font-size: 0.875rem;">
+                        🔍 Fetch Real
+                    </button>
+                    <button class="btn btn-secondary" onclick="refreshTransactionHistory()" style="padding: 0.5rem; font-size: 0.875rem;">
+                        🔄 Refresh
+                    </button>
+                </div>
+            </div>
+            <div class="transaction-history" id="transactionHistory">
+                <div class="loading">Loading transactions...</div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Transfer Modal -->
+    <div id="transferModal" class="modal">
+        <div class="modal-content">
+            <h3>💸 Send BDAG</h3>
+            <div>
+                <label>To Address:</label>
+                <div style="display: flex; gap: 0.5rem; align-items: center;">
+                    <input type="text" id="recipientAddress" placeholder="0x..." style="flex: 1;" />
+                    <button class="btn btn-secondary" onclick="openContactSelector()" style="padding: 0.5rem;">👥</button>
+                </div>
+            </div>
+            <div>
+                <label>Amount (BDAG):</label>
+                <input type="number" id="transferAmount" placeholder="0.0" step="0.000001" />
+            </div>
+            <div>
+                <label>Message (Optional):</label>
+                <input type="text" id="transferMessage" placeholder="Enter message..." />
+            </div>
+            <div class="modal-buttons">
+                <button class="btn btn-secondary" onclick="closeTransfer()">Cancel</button>
+                <button class="btn btn-primary" onclick="sendTransaction()">Send BDAG</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Add Contact Modal -->
+    <div id="addContactModal" class="modal">
+        <div class="modal-content">
+            <h3>➕ Add New Contact</h3>
+            <div>
+                <label>Nickname:</label>
+                <input type="text" id="contactNickname" placeholder="e.g., John, Alice, Friend" />
+            </div>
+            <div>
+                <label>Wallet Address:</label>
+                <input type="text" id="contactAddress" placeholder="0x..." />
+            </div>
+            <div>
+                <label>Notes (Optional):</label>
+                <input type="text" id="contactNotes" placeholder="e.g., Work colleague, Family member" />
+            </div>
+            <div class="modal-buttons">
+                <button class="btn btn-secondary" onclick="closeAddContact()">Cancel</button>
+                <button class="btn btn-primary" onclick="saveContact()">Save Contact</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Contact Selector Modal -->
+    <div id="contactSelectorModal" class="modal">
+        <div class="modal-content">
+            <h3>👥 Select Contact</h3>
+            <div id="contactSelectorList" style="max-height: 300px; overflow-y: auto;">
+                <div class="loading">Loading contacts...</div>
+            </div>
+            <div class="modal-buttons">
+                <button class="btn btn-secondary" onclick="closeContactSelector()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chat Modal -->
+    <div id="chatModal" class="modal">
+        <div class="modal-content" style="max-width: 600px; height: 500px; display: flex; flex-direction: column;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border-color);">
+                <h3 id="chatContactName">💬 Chat</h3>
+                <button class="btn btn-secondary" onclick="closeChat()" style="padding: 0.5rem; font-size: 0.875rem;">✕</button>
+            </div>
+            
+            <div id="chatMessages" style="flex: 1; overflow-y: auto; padding: 1rem; background: var(--bg-primary); border-radius: 0.5rem; margin-bottom: 1rem; max-height: 300px;">
+                <div style="text-align: center; color: var(--text-secondary); padding: 2rem;">
+                    <div style="font-size: 1.5rem; margin-bottom: 1rem;">💬</div>
+                    <div>Start a conversation with this contact!</div>
+                </div>
+            </div>
+            
+            <div style="display: flex; gap: 0.5rem;">
+                <input type="text" id="chatMessageInput" placeholder="Type your message..." style="flex: 1; padding: 0.75rem; border-radius: 0.5rem; border: 1px solid var(--border-color); background: var(--bg-primary); color: var(--text-primary); font-size: 1rem;" onkeypress="handleChatKeyPress(event)">
+                <button class="btn btn-primary" onclick="sendChatMessage()" style="padding: 0.75rem 1rem;">Send</button>
+            </div>
+        </div>
+    </div>
+    
+    <script src="blockchain-integration.js"></script>
+    <script>
+        // Initialize wallet page
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Wallet page loaded');
+            
+            // Initialize theme
+            initializeTheme();
+            
+            setTimeout(updateWalletInfo, 1000);
+        });
+
+        // Theme management functions
+        function initializeTheme() {
+            const savedTheme = localStorage.getItem('wallet_theme') || 'dark';
+            setTheme(savedTheme);
+        }
+
+        function setTheme(theme) {
+            document.documentElement.setAttribute('data-theme', theme);
+            const themeToggle = document.getElementById('themeToggle');
+            if (themeToggle) {
+                themeToggle.textContent = theme === 'light' ? '🌙' : '☀️';
+                themeToggle.title = theme === 'light' ? 'Switch to Dark Mode' : 'Switch to Light Mode';
+            }
+            localStorage.setItem('wallet_theme', theme);
+        }
+
+        function toggleTheme() {
+            const currentTheme = document.documentElement.getAttribute('data-theme') || 'dark';
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            setTheme(newTheme);
+            
+            // Show notification
+            const themeName = newTheme === 'light' ? 'Light' : 'Dark';
+            showNotification(`${themeName} mode enabled!`, 'success');
+        }
+        
+        function updateWalletInfo() {
+            console.log('Updating wallet info...');
+            if (window.blockchainBuddy && window.blockchainBuddy.isConnected) {
+                console.log('BlockchainBuddy connected:', window.blockchainBuddy.currentAccount);
+                document.getElementById('walletAddress').textContent = window.blockchainBuddy.currentAccount || 'Not connected';
+                document.getElementById('walletBalance').textContent = 'Loading...';
+                document.getElementById('connectionStatus').textContent = 'Connected';
+                
+                // Update balance
+                window.blockchainBuddy.getBlockDAGBalance().then(balance => {
+                    console.log('Balance:', balance);
+                    document.getElementById('walletBalance').textContent = balance + ' BDAG';
+                }).catch(error => {
+                    console.error('Error getting balance:', error);
+                    document.getElementById('walletBalance').textContent = 'Error loading balance';
+                });
+            } else {
+                console.log('BlockchainBuddy not connected');
+                document.getElementById('walletAddress').textContent = 'Not connected';
+                document.getElementById('walletBalance').textContent = '0 BDAG';
+                document.getElementById('connectionStatus').textContent = 'Not Connected';
+            }
+        }
+        
+        function copyAddress() {
+            const address = document.getElementById('walletAddress').textContent;
+            if (address && address !== 'Not connected') {
+                navigator.clipboard.writeText(address);
+                showNotification('Address copied to clipboard!', 'success');
+            }
+        }
+        
+        function refreshBalance() {
+            if (window.blockchainBuddy) {
+                window.blockchainBuddy.getBlockDAGBalance().then(balance => {
+                    document.getElementById('walletBalance').textContent = balance + ' BDAG';
+                    showNotification('Balance updated!', 'success');
+                });
+            }
+        }
+        
+        function getTestTokens() {
+            if (window.blockchainBuddy) {
+                window.blockchainBuddy.openBlockDAGFaucet();
+            }
+        }
+        
+        function openTransfer() {
+            document.getElementById('transferModal').style.display = 'block';
+        }
+        
+        function closeTransfer() {
+            document.getElementById('transferModal').style.display = 'none';
+        }
+        
+        function sendTransaction() {
+            const recipient = document.getElementById('recipientAddress').value;
+            const amount = document.getElementById('transferAmount').value;
+            const message = document.getElementById('transferMessage').value;
+            
+            if (!recipient || !amount) {
+                showNotification('Please fill in all required fields', 'error');
+                return;
+            }
+            
+            // Validate amount
+            if (parseFloat(amount) <= 0) {
+                showNotification('Amount must be greater than 0', 'error');
+                return;
+            }
+            
+            if (window.blockchainBuddy) {
+                showNotification('Sending transaction...', 'info');
+                
+                window.blockchainBuddy.sendBDAGToAddress(recipient, amount, message).then(result => {
+                    if (result) {
+                        showNotification('Transaction sent successfully!', 'success');
+                        closeTransfer();
+                        refreshBalance();
+                        
+                        // Clear form
+                        document.getElementById('recipientAddress').value = '';
+                        document.getElementById('transferAmount').value = '';
+                        document.getElementById('transferMessage').value = '';
+                    } else {
+                        showNotification('Transaction failed. Please try again.', 'error');
+                    }
+                }).catch(error => {
+                    console.error('Transaction error:', error);
+                    showNotification('Transaction failed: ' + error.message, 'error');
+                });
+            } else {
+                showNotification('BlockchainBuddy not connected', 'error');
+            }
+        }
+        
+        function openExplorer() {
+            if (window.blockchainBuddy) {
+                window.blockchainBuddy.openBlockDAGExplorer();
+            }
+        }
+        
+        async function showTransactionHistory() {
+            const section = document.getElementById('transactionHistorySection');
+            const history = document.getElementById('transactionHistory');
+            
+            if (section.style.display === 'none') {
+                section.style.display = 'block';
+                
+                // Show loading
+                history.innerHTML = '<div class="loading">Loading transaction history...</div>';
+                
+                // Get transaction history
+                if (window.blockchainBuddy) {
+                    try {
+                        const transactions = await window.blockchainBuddy.getTransactionHistory();
+                        console.log('Transaction history:', transactions);
+                        
+                        // Ensure transactions is an array
+                        const transactionArray = Array.isArray(transactions) ? transactions : [];
+                        
+                        if (transactionArray.length === 0) {
+                            history.innerHTML = `
+                                <div style="padding: 2rem; text-align: center; color: var(--text-secondary);">
+                                    <div style="font-size: 1.5rem; margin-bottom: 1rem;">📊</div>
+                                    <div>No transactions found</div>
+                                    <div style="font-size: 0.875rem; margin-top: 0.5rem;">Send some BDAG to see your transaction history here!</div>
+                                </div>
+                            `;
+                        } else {
+                            history.innerHTML = '';
+                            
+                            // Sort transactions by timestamp (newest first)
+                            const sortedTransactions = transactionArray.sort((a, b) => b.timestamp - a.timestamp);
+                            
+                            sortedTransactions.forEach(tx => {
+                                const item = document.createElement('div');
+                                item.className = 'transaction-item';
+                                
+                                // Format date
+                                const date = new Date(tx.timestamp);
+                                const formattedDate = date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+                                
+                                // Determine if this is a credit or debit transaction based on current wallet
+                                const currentWallet = window.blockchainBuddy.currentAccount;
+                                const isCredit = tx.to.toLowerCase() === currentWallet.toLowerCase();
+                                const isDebit = tx.from.toLowerCase() === currentWallet.toLowerCase();
+                                
+                                // Get contact name if available
+                                const contacts = JSON.parse(localStorage.getItem('wallet_contacts') || '[]');
+                                let displayName = 'Unknown';
+                                let displayAddress = '';
+                                
+                                if (isCredit) {
+                                    // Credit transaction - money came from someone to current wallet
+                                    const contact = contacts.find(c => c.address.toLowerCase() === tx.from.toLowerCase());
+                                    displayName = contact ? contact.nickname : 'Unknown';
+                                    displayAddress = tx.from;
+                                } else if (isDebit) {
+                                    // Debit transaction - money sent from current wallet to someone
+                                    const contact = contacts.find(c => c.address.toLowerCase() === tx.to.toLowerCase());
+                                    displayName = contact ? contact.nickname : 'Unknown';
+                                    displayAddress = tx.to;
+                                } else {
+                                    // Fallback - determine based on transaction type
+                                    if (tx.type === 'credit') {
+                                        const contact = contacts.find(c => c.address.toLowerCase() === tx.from.toLowerCase());
+                                        displayName = contact ? contact.nickname : 'Unknown';
+                                        displayAddress = tx.from;
+                                    } else {
+                                        const contact = contacts.find(c => c.address.toLowerCase() === tx.to.toLowerCase());
+                                        displayName = contact ? contact.nickname : 'Unknown';
+                                        displayAddress = tx.to;
+                                    }
+                                }
+                                
+                                // Format amount
+                                const amount = parseFloat(tx.amount).toFixed(6);
+                                
+                                item.innerHTML = `
+                                    <div class="transaction-info">
+                                        <div style="font-weight: 600; color: var(--text-primary);">
+                                            ${isCredit ? 'From' : 'To'}: ${displayName}
+                                        </div>
+                                        <div style="font-family: monospace; font-size: 0.875rem; color: var(--text-secondary); margin: 0.25rem 0;">
+                                            ${displayAddress}
+                                        </div>
+                                        <div style="font-size: 0.875rem; color: var(--text-secondary);">
+                                            ${formattedDate}
+                                        </div>
+                                        ${tx.message ? `<div style="font-size: 0.875rem; color: var(--text-secondary); margin-top: 0.25rem; font-style: italic;">"${tx.message}"</div>` : ''}
+                                    </div>
+                                    <div style="text-align: right;">
+                                        <div class="transaction-amount" style="color: ${isCredit ? 'var(--accent-green)' : 'var(--accent-red)'}">
+                                            ${isCredit ? '+' : '-'}${amount} BDAG
+                                        </div>
+                                        <div class="transaction-status status-${tx.status}">${tx.status}</div>
+                                        <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.25rem;">
+                                            ${tx.hash ? tx.hash.slice(0, 10) + '...' : ''}
+                                        </div>
+                                    </div>
+                                `;
+                                history.appendChild(item);
+                            });
+                            
+                            // Add summary
+                            const currentWallet = window.blockchainBuddy.currentAccount;
+                            const totalCredits = sortedTransactions
+                                .filter(tx => tx.to.toLowerCase() === currentWallet.toLowerCase())
+                                .reduce((sum, tx) => sum + parseFloat(tx.amount), 0);
+                            
+                            const totalDebits = sortedTransactions
+                                .filter(tx => tx.from.toLowerCase() === currentWallet.toLowerCase())
+                                .reduce((sum, tx) => sum + parseFloat(tx.amount), 0);
+                            
+                            const summaryDiv = document.createElement('div');
+                            summaryDiv.style.cssText = 'padding: 1rem; background: var(--bg-tertiary); border-radius: 0.5rem; margin-top: 1rem; text-align: center;';
+                            summaryDiv.innerHTML = `
+                                <div style="font-weight: 600; color: var(--text-primary);">Transaction Summary</div>
+                                <div style="margin-top: 0.5rem;">
+                                    <span style="color: var(--text-secondary);">Total Transactions:</span> 
+                                    <span style="color: var(--text-primary); font-weight: 600;">${sortedTransactions.length}</span>
+                                </div>
+                                <div style="margin-top: 0.25rem;">
+                                    <span style="color: var(--text-secondary);">Total Received:</span> 
+                                    <span style="color: var(--accent-green); font-weight: 600;">+${totalCredits.toFixed(6)} BDAG</span>
+                                </div>
+                                <div>
+                                    <span style="color: var(--text-secondary);">Total Sent:</span> 
+                                    <span style="color: var(--accent-red); font-weight: 600;">-${totalDebits.toFixed(6)} BDAG</span>
+                                </div>
+                                <div style="margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px solid var(--border-color);">
+                                    <span style="color: var(--text-secondary);">Net:</span> 
+                                    <span style="color: ${(totalCredits - totalDebits) >= 0 ? 'var(--accent-green)' : 'var(--accent-red)'}; font-weight: 600;">
+                                        ${(totalCredits - totalDebits) >= 0 ? '+' : ''}${(totalCredits - totalDebits).toFixed(6)} BDAG
+                                    </span>
+                                </div>
+                            `;
+                            history.appendChild(summaryDiv);
+                        }
+                    } catch (error) {
+                        console.error('Error loading transaction history:', error);
+                        history.innerHTML = `
+                            <div style="padding: 2rem; text-align: center; color: var(--accent-red);">
+                                <div style="font-size: 1.5rem; margin-bottom: 1rem;">⚠️</div>
+                                <div>Error loading transaction history</div>
+                                <div style="font-size: 0.875rem; margin-top: 0.5rem;">Please try again later</div>
+                            </div>
+                        `;
+                    }
+                } else {
+                    history.innerHTML = `
+                        <div style="padding: 2rem; text-align: center; color: var(--text-secondary);">
+                            <div style="font-size: 1.5rem; margin-bottom: 1rem;">🔗</div>
+                            <div>Wallet not connected</div>
+                            <div style="font-size: 0.875rem; margin-top: 0.5rem;">Connect your wallet to view transaction history</div>
+                        </div>
+                    `;
+                }
+            } else {
+                section.style.display = 'none';
+            }
+        }
+        
+        function showNotification(message, type) {
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.remove();
+            }, 3000);
+        }
+
+        // Check if we're connected every 2 seconds
+        setInterval(updateWalletInfo, 2000);
+        
+        // Contact management functions
+        function loadContacts() {
+            const contacts = JSON.parse(localStorage.getItem('wallet_contacts') || '[]');
+            const contactsList = document.getElementById('contactsList');
+            
+            if (contacts.length === 0) {
+                contactsList.innerHTML = '<div style="text-align: center; padding: 2rem; color: var(--text-secondary);">No contacts saved yet. Add your first contact!</div>';
+                return;
+            }
+            
+            contactsList.innerHTML = '';
+            contacts.forEach((contact, index) => {
+                const contactItem = document.createElement('div');
+                contactItem.className = 'contact-item';
+                contactItem.innerHTML = `
+                    <div class="contact-info">
+                        <div class="contact-name">${contact.nickname}</div>
+                        <div class="contact-address">${contact.address}</div>
+                        ${contact.notes ? `<div class="contact-notes">${contact.notes}</div>` : ''}
+                    </div>
+                    <div class="contact-actions">
+                        <button class="btn btn-primary" onclick="sendToContact('${contact.address}')" style="font-size: 0.75rem;">💸 Send</button>
+                        <button class="btn btn-secondary" onclick="openChatWithContact('${contact.nickname}', '${contact.address}')" style="font-size: 0.75rem;">💬 Chat</button>
+                        <button class="btn btn-secondary" onclick="copyContactAddress('${contact.address}')" style="font-size: 0.75rem;">📋 Copy</button>
+                        <button class="btn btn-secondary" onclick="deleteContact(${index})" style="font-size: 0.75rem;">🗑️</button>
+                    </div>
+                `;
+                contactsList.appendChild(contactItem);
+            });
+        }
+        
+        function openAddContact() {
+            document.getElementById('addContactModal').style.display = 'block';
+            // Clear form
+            document.getElementById('contactNickname').value = '';
+            document.getElementById('contactAddress').value = '';
+            document.getElementById('contactNotes').value = '';
+        }
+        
+        function closeAddContact() {
+            document.getElementById('addContactModal').style.display = 'none';
+        }
+        
+        function saveContact() {
+            const nickname = document.getElementById('contactNickname').value.trim();
+            const address = document.getElementById('contactAddress').value.trim();
+            const notes = document.getElementById('contactNotes').value.trim();
+            
+            if (!nickname || !address) {
+                showNotification('Please fill in nickname and address', 'error');
+                return;
+            }
+            
+            // Validate address format
+            if (!/^0x[a-fA-F0-9]{40}$/.test(address)) {
+                showNotification('Please enter a valid wallet address', 'error');
+                return;
+            }
+            
+            // Check if nickname already exists
+            const contacts = JSON.parse(localStorage.getItem('wallet_contacts') || '[]');
+            if (contacts.some(contact => contact.nickname.toLowerCase() === nickname.toLowerCase())) {
+                showNotification('A contact with this nickname already exists', 'error');
+                return;
+            }
+            
+            // Check if address already exists
+            if (contacts.some(contact => contact.address.toLowerCase() === address.toLowerCase())) {
+                showNotification('This address is already saved as a contact', 'error');
+                return;
+            }
+            
+            // Save contact
+            const newContact = { nickname, address, notes, createdAt: Date.now() };
+            contacts.push(newContact);
+            localStorage.setItem('wallet_contacts', JSON.stringify(contacts));
+            
+            showNotification('Contact saved successfully!', 'success');
+            closeAddContact();
+            loadContacts();
+        }
+        
+        function deleteContact(index) {
+            if (confirm('Are you sure you want to delete this contact?')) {
+                const contacts = JSON.parse(localStorage.getItem('wallet_contacts') || '[]');
+                contacts.splice(index, 1);
+                localStorage.setItem('wallet_contacts', JSON.stringify(contacts));
+                loadContacts();
+                showNotification('Contact deleted', 'success');
+            }
+        }
+        
+        function copyContactAddress(address) {
+            navigator.clipboard.writeText(address);
+            showNotification('Address copied to clipboard!', 'success');
+        }
+        
+        function sendToContact(address) {
+            document.getElementById('recipientAddress').value = address;
+            closeContactSelector();
+            openTransfer();
+        }
+        
+        function openContactSelector() {
+            const contacts = JSON.parse(localStorage.getItem('wallet_contacts') || '[]');
+            const selectorList = document.getElementById('contactSelectorList');
+            
+            if (contacts.length === 0) {
+                selectorList.innerHTML = '<div style="text-align: center; padding: 2rem; color: var(--text-secondary);">No contacts saved. Add contacts first!</div>';
+            } else {
+                selectorList.innerHTML = '';
+                contacts.forEach(contact => {
+                    const contactItem = document.createElement('div');
+                    contactItem.className = 'contact-selector-item';
+                    contactItem.onclick = () => sendToContact(contact.address);
+                    contactItem.innerHTML = `
+                        <div class="contact-selector-info">
+                            <div class="contact-selector-name">${contact.nickname}</div>
+                            <div class="contact-selector-address">${contact.address}</div>
+                        </div>
+                        <div style="color: var(--text-secondary);">→</div>
+                    `;
+                    selectorList.appendChild(contactItem);
+                });
+            }
+            
+            document.getElementById('contactSelectorModal').style.display = 'block';
+        }
+        
+        function closeContactSelector() {
+            document.getElementById('contactSelectorModal').style.display = 'none';
+        }
+
+        // Chat functionality
+        let currentChatContact = null;
+
+        function openChatWithContact(contactName, contactAddress) {
+            currentChatContact = { name: contactName, address: contactAddress };
+            document.getElementById('chatContactName').textContent = `💬 Chat with ${contactName}`;
+            document.getElementById('chatModal').style.display = 'block';
+            document.getElementById('chatMessageInput').focus();
+            
+            // Load chat history
+            loadChatHistory(contactAddress);
+        }
+
+        function closeChat() {
+            document.getElementById('chatModal').style.display = 'none';
+            currentChatContact = null;
+        }
+
+        function loadChatHistory(contactAddress) {
+            const chatMessages = document.getElementById('chatMessages');
+            const chatHistory = JSON.parse(localStorage.getItem(`chat_${contactAddress}`) || '[]');
+            
+            if (chatHistory.length === 0) {
+                chatMessages.innerHTML = `
+                    <div style="text-align: center; color: var(--text-secondary); padding: 2rem;">
+                        <div style="font-size: 1.5rem; margin-bottom: 1rem;">💬</div>
+                        <div>Start a conversation with this contact!</div>
+                    </div>
+                `;
+            } else {
+                chatMessages.innerHTML = '';
+                chatHistory.forEach(message => {
+                    const messageDiv = document.createElement('div');
+                    messageDiv.style.cssText = `
+                        margin-bottom: 1rem;
+                        padding: 0.75rem;
+                        border-radius: 0.5rem;
+                        max-width: 80%;
+                        word-wrap: break-word;
+                    `;
+                    
+                    if (message.sender === 'me') {
+                        messageDiv.style.cssText += `
+                            background: var(--accent-blue);
+                            color: white;
+                            margin-left: auto;
+                            text-align: right;
+                        `;
+                    } else {
+                        messageDiv.style.cssText += `
+                            background: var(--bg-tertiary);
+                            color: var(--text-primary);
+                            margin-right: auto;
+                        `;
+                    }
+                    
+                    messageDiv.innerHTML = `
+                        <div style="font-size: 0.875rem; margin-bottom: 0.25rem; opacity: 0.8;">
+                            ${message.sender === 'me' ? 'You' : currentChatContact.name}
+                        </div>
+                        <div>${message.text}</div>
+                        <div style="font-size: 0.75rem; margin-top: 0.25rem; opacity: 0.7;">
+                            ${new Date(message.timestamp).toLocaleTimeString()}
+                        </div>
+                    `;
+                    chatMessages.appendChild(messageDiv);
+                });
+                
+                // Scroll to bottom
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            }
+        }
+
+        function sendChatMessage() {
+            const messageInput = document.getElementById('chatMessageInput');
+            const message = messageInput.value.trim();
+            
+            if (!message || !currentChatContact) return;
+            
+            // Add message to chat
+            const chatHistory = JSON.parse(localStorage.getItem(`chat_${currentChatContact.address}`) || '[]');
+            const newMessage = {
+                text: message,
+                sender: 'me',
+                timestamp: Date.now()
+            };
+            
+            chatHistory.push(newMessage);
+            localStorage.setItem(`chat_${currentChatContact.address}`, JSON.stringify(chatHistory));
+            
+            // Clear input
+            messageInput.value = '';
+            
+            // Reload chat history
+            loadChatHistory(currentChatContact.address);
+            
+            // Simulate response from contact (for demo purposes)
+            setTimeout(() => {
+                const responses = [
+                    "Thanks for the message! I'll get back to you soon.",
+                    "Got it! Let me check my wallet and respond.",
+                    "Hi there! How can I help you with the transaction?",
+                    "Thanks for reaching out! I'm available for crypto transactions.",
+                    "Hello! I received your message. What's up?"
+                ];
+                
+                const randomResponse = responses[Math.floor(Math.random() * responses.length)];
+                const responseMessage = {
+                    text: randomResponse,
+                    sender: 'contact',
+                    timestamp: Date.now()
+                };
+                
+                chatHistory.push(responseMessage);
+                localStorage.setItem(`chat_${currentChatContact.address}`, JSON.stringify(chatHistory));
+                loadChatHistory(currentChatContact.address);
+            }, 1000 + Math.random() * 2000); // Random delay between 1-3 seconds
+        }
+
+        function handleChatKeyPress(event) {
+            if (event.key === 'Enter') {
+                sendChatMessage();
+            }
+        }
+
+        // Contact search functionality
+        function searchContacts() {
+            const searchInput = document.getElementById('contactSearchInput');
+            const searchResults = document.getElementById('searchResults');
+            const query = searchInput.value.trim().toLowerCase();
+            
+            if (query.length === 0) {
+                searchResults.style.display = 'none';
+                loadContacts(); // Show all contacts
+                return;
+            }
+            
+            const contacts = JSON.parse(localStorage.getItem('wallet_contacts') || '[]');
+            const filteredContacts = contacts.filter(contact => 
+                contact.nickname.toLowerCase().includes(query) ||
+                contact.address.toLowerCase().includes(query) ||
+                (contact.notes && contact.notes.toLowerCase().includes(query))
+            );
+            
+            if (filteredContacts.length === 0) {
+                searchResults.innerHTML = `
+                    <div style="padding: 1rem; text-align: center; color: var(--text-secondary);">
+                        <div style="font-size: 1.2rem; margin-bottom: 0.5rem;">🔍</div>
+                        <div>No contacts found matching "${query}"</div>
+                    </div>
+                `;
+            } else {
+                searchResults.innerHTML = '';
+                filteredContacts.forEach((contact, index) => {
+                    const resultItem = document.createElement('div');
+                    resultItem.style.cssText = `
+                        padding: 0.75rem;
+                        border-bottom: 1px solid var(--border-color);
+                        cursor: pointer;
+                        transition: background-color 0.2s ease;
+                    `;
+                    resultItem.onmouseover = () => {
+                        resultItem.style.background = 'var(--bg-tertiary)';
+                    };
+                    resultItem.onmouseout = () => {
+                        resultItem.style.background = 'transparent';
+                    };
+                    resultItem.onclick = () => {
+                        searchInput.value = contact.nickname;
+                        searchResults.style.display = 'none';
+                        filterContactsList(query);
+                    };
+                    
+                    resultItem.innerHTML = `
+                        <div style="font-weight: 600; color: var(--text-primary); margin-bottom: 0.25rem;">
+                            ${contact.nickname}
+                        </div>
+                        <div style="font-family: monospace; font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 0.25rem;">
+                            ${contact.address}
+                        </div>
+                        ${contact.notes ? `<div style="font-size: 0.75rem; color: var(--text-secondary);">${contact.notes}</div>` : ''}
+                    `;
+                    searchResults.appendChild(resultItem);
+                });
+            }
+            
+            searchResults.style.display = 'block';
+        }
+
+        function filterContactsList(query) {
+            const contacts = JSON.parse(localStorage.getItem('wallet_contacts') || '[]');
+            const filteredContacts = contacts.filter(contact => 
+                contact.nickname.toLowerCase().includes(query.toLowerCase()) ||
+                contact.address.toLowerCase().includes(query.toLowerCase()) ||
+                (contact.notes && contact.notes.toLowerCase().includes(query.toLowerCase()))
+            );
+            
+            const contactsList = document.getElementById('contactsList');
+            
+            if (filteredContacts.length === 0) {
+                contactsList.innerHTML = `
+                    <div style="text-align: center; padding: 2rem; color: var(--text-secondary);">
+                        <div style="font-size: 1.5rem; margin-bottom: 1rem;">🔍</div>
+                        <div>No contacts found matching "${query}"</div>
+                        <div style="font-size: 0.875rem; margin-top: 0.5rem;">Try a different search term</div>
+                    </div>
+                `;
+            } else {
+                contactsList.innerHTML = '';
+                filteredContacts.forEach((contact, index) => {
+                    const contactItem = document.createElement('div');
+                    contactItem.className = 'contact-item';
+                    contactItem.innerHTML = `
+                        <div class="contact-info">
+                            <div class="contact-name">${contact.nickname}</div>
+                            <div class="contact-address">${contact.address}</div>
+                            ${contact.notes ? `<div class="contact-notes">${contact.notes}</div>` : ''}
+                        </div>
+                        <div class="contact-actions">
+                            <button class="btn btn-primary" onclick="sendToContact('${contact.address}')" style="font-size: 0.75rem;">💸 Send</button>
+                            <button class="btn btn-secondary" onclick="openChatWithContact('${contact.nickname}', '${contact.address}')" style="font-size: 0.75rem;">💬 Chat</button>
+                            <button class="btn btn-secondary" onclick="copyContactAddress('${contact.address}')" style="font-size: 0.75rem;">📋 Copy</button>
+                            <button class="btn btn-secondary" onclick="deleteContact(${contacts.indexOf(contact)})" style="font-size: 0.75rem;">🗑️</button>
+                        </div>
+                    `;
+                    contactsList.appendChild(contactItem);
+                });
+            }
+        }
+
+        // Close search results when clicking outside
+        document.addEventListener('click', function(event) {
+            const searchInput = document.getElementById('contactSearchInput');
+            const searchResults = document.getElementById('searchResults');
+            
+            if (!searchInput.contains(event.target) && !searchResults.contains(event.target)) {
+                searchResults.style.display = 'none';
+            }
+        });
+
+        // Chatbot functionality
+        let chatbotOpen = false;
+        let isRecording = false;
+        let recognition = null;
+
+        // Initialize speech recognition
+        function initSpeechRecognition() {
+            if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+                recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+                recognition.continuous = false;
+                recognition.interimResults = false;
+                recognition.lang = 'en-US';
+                
+                recognition.onstart = function() {
+                    isRecording = true;
+                    document.getElementById('voiceButton').classList.add('recording');
+                    document.getElementById('voiceStatus').style.display = 'block';
+                    document.getElementById('voiceStatus').classList.add('recording');
+                    document.getElementById('voiceStatus').innerHTML = `
+                        <div style="font-size: 3rem; margin-bottom: 1rem;">🎤</div>
+                        <div style="font-weight: 600; margin-bottom: 0.5rem;">Listening...</div>
+                        <div style="font-size: 0.875rem; color: var(--text-secondary);">Speak your command clearly</div>
+                    `;
+                };
+                
+                recognition.onresult = function(event) {
+                    const transcript = event.results[0][0].transcript;
+                    document.getElementById('chatbotInput').value = transcript;
+                    addChatbotMessage(transcript, 'user');
+                    processChatbotCommand(transcript);
+                };
+                
+                recognition.onerror = function(event) {
+                    console.error('Speech recognition error:', event.error);
+                    let errorMessage = 'Voice recognition error. Please try again.';
+                    
+                    switch(event.error) {
+                        case 'no-speech':
+                            errorMessage = 'No speech detected. Please speak clearly.';
+                            break;
+                        case 'audio-capture':
+                            errorMessage = 'Microphone not found. Please check your microphone.';
+                            break;
+                        case 'not-allowed':
+                            errorMessage = 'Microphone access denied. Please allow microphone access.';
+                            break;
+                        case 'network':
+                            errorMessage = 'Network error. Please check your connection.';
+                            break;
+                    }
+                    
+                    addChatbotMessage(errorMessage, 'bot');
+                };
+                
+                recognition.onend = function() {
+                    isRecording = false;
+                    document.getElementById('voiceButton').classList.remove('recording');
+                    document.getElementById('voiceStatus').style.display = 'none';
+                    document.getElementById('voiceStatus').classList.remove('recording');
+                };
+            } else {
+                console.log('Speech recognition not supported');
+                addChatbotMessage("Voice recognition is not supported in your browser. Please use text input.", 'bot');
+            }
+        }
+
+        function toggleVoiceRecognition() {
+            if (!recognition) {
+                initSpeechRecognition();
+            }
+            
+            if (isRecording) {
+                recognition.stop();
+            } else {
+                try {
+                    recognition.start();
+                } catch (error) {
+                    console.error('Error starting speech recognition:', error);
+                    addChatbotMessage("Error starting voice recognition. Please try again.", 'bot');
+                }
+            }
+        }
+
+        function toggleChatbot() {
+            const container = document.getElementById('chatbotContainer');
+            chatbotOpen = !chatbotOpen;
+            
+            if (chatbotOpen) {
+                container.style.display = 'flex';
+                document.getElementById('chatbotInput').focus();
+                
+                // Initialize speech recognition when chatbot opens
+                if (!recognition) {
+                    initSpeechRecognition();
+                }
+            } else {
+                container.style.display = 'none';
+                
+                // Stop recording if active
+                if (isRecording && recognition) {
+                    recognition.stop();
+                }
+            }
+        }
+
+        function handleChatbotKeyPress(event) {
+            if (event.key === 'Enter') {
+                sendChatbotMessage();
+            }
+        }
+
+        function sendChatbotMessage() {
+            const input = document.getElementById('chatbotInput');
+            const message = input.value.trim();
+            
+            if (!message) return;
+            
+            // Add user message
+            addChatbotMessage(message, 'user');
+            input.value = '';
+            
+            // Process command
+            processChatbotCommand(message);
+        }
+
+        function addChatbotMessage(text, sender) {
+            const messagesContainer = document.getElementById('chatbotMessages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `chatbot-message ${sender}`;
+            messageDiv.textContent = text;
+            messagesContainer.appendChild(messageDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        function processChatbotCommand(command) {
+            const lowerCommand = command.toLowerCase();
+            
+            // Delay to simulate thinking
+            setTimeout(() => {
+                if (lowerCommand.includes('send') || lowerCommand.includes('transfer')) {
+                    handleSendCommand(command);
+                } else if (lowerCommand.includes('balance') || lowerCommand.includes('check balance')) {
+                    handleBalanceCommand();
+                } else if (lowerCommand.includes('test token') || lowerCommand.includes('faucet')) {
+                    handleTestTokenCommand();
+                } else if (lowerCommand.includes('transaction') || lowerCommand.includes('history')) {
+                    handleTransactionHistoryCommand();
+                } else if (lowerCommand.includes('search') || lowerCommand.includes('find contact')) {
+                    handleSearchCommand(command);
+                } else if (lowerCommand.includes('add contact') || lowerCommand.includes('new contact')) {
+                    handleAddContactCommand();
+                } else if (lowerCommand.includes('theme') || lowerCommand.includes('dark') || lowerCommand.includes('light')) {
+                    handleThemeCommand(lowerCommand);
+                } else if (lowerCommand.includes('help') || lowerCommand.includes('what can you do')) {
+                    handleHelpCommand();
+                } else {
+                    addChatbotMessage("I'm not sure how to help with that. Try saying 'help' to see what I can do!", 'bot');
+                }
+            }, 500);
+        }
+
+        function handleSendCommand(command) {
+            const amountMatch = command.match(/(\d+(?:\.\d+)?)/);
+            const addressMatch = command.match(/0x[a-fA-F0-9]{40}/);
+            
+            if (amountMatch && addressMatch) {
+                const amount = amountMatch[1];
+                const address = addressMatch[0];
+                
+                addChatbotMessage(`I'll help you send ${amount} BDAG to ${address}. Opening transfer modal...`, 'bot');
+                
+                // Fill transfer modal
+                document.getElementById('recipientAddress').value = address;
+                document.getElementById('transferAmount').value = amount;
+                openTransfer();
+                
+            } else if (command.includes('to')) {
+                // Try to extract contact name
+                const contactName = extractContactName(command);
+                if (contactName) {
+                    const contacts = JSON.parse(localStorage.getItem('wallet_contacts') || '[]');
+                    const contact = contacts.find(c => c.nickname.toLowerCase().includes(contactName.toLowerCase()));
+                    
+                    if (contact) {
+                        const amountMatch = command.match(/(\d+(?:\.\d+)?)/);
+                        const amount = amountMatch ? amountMatch[1] : '1.0';
+                        
+                        addChatbotMessage(`I'll help you send ${amount} BDAG to ${contact.nickname}. Opening transfer modal...`, 'bot');
+                        
+                        document.getElementById('recipientAddress').value = contact.address;
+                        document.getElementById('transferAmount').value = amount;
+                        openTransfer();
+                    } else {
+                        addChatbotMessage(`I couldn't find a contact named "${contactName}". Please add them as a contact first.`, 'bot');
+                    }
+                } else {
+                    addChatbotMessage("Please specify an amount and address. Example: 'send 5 BDAG to 0x1234...'", 'bot');
+                }
+            } else {
+                addChatbotMessage("Please specify an amount and address. Example: 'send 5 BDAG to 0x1234...'", 'bot');
+            }
+        }
+
+        function handleBalanceCommand() {
+            if (window.blockchainBuddy && window.blockchainBuddy.isConnected) {
+                window.blockchainBuddy.getBlockDAGBalance().then(balance => {
+                    addChatbotMessage(`Your current balance is ${balance} BDAG.`, 'bot');
+                }).catch(error => {
+                    addChatbotMessage("Sorry, I couldn't fetch your balance. Please check your wallet connection.", 'bot');
+                });
+            } else {
+                addChatbotMessage("Please connect your wallet first to check your balance.", 'bot');
+            }
+        }
+
+        function handleTestTokenCommand() {
+            addChatbotMessage("I'll help you get test tokens from the faucet!", 'bot');
+            getTestTokens();
+        }
+
+        function handleTransactionHistoryCommand() {
+            addChatbotMessage("I'll show you your transaction history!", 'bot');
+            showTransactionHistory();
+        }
+
+        function handleSearchCommand(command) {
+            const searchTerm = extractSearchTerm(command);
+            if (searchTerm) {
+                addChatbotMessage(`I'll search for contacts matching "${searchTerm}"...`, 'bot');
+                document.getElementById('contactSearchInput').value = searchTerm;
+                searchContacts();
+            } else {
+                addChatbotMessage("Please specify what you want to search for. Example: 'search for John'", 'bot');
+            }
+        }
+
+        function handleAddContactCommand() {
+            addChatbotMessage("I'll open the add contact form for you!", 'bot');
+            openAddContact();
+        }
+
+        function handleThemeCommand(command) {
+            if (command.includes('light')) {
+                addChatbotMessage("Switching to light mode!", 'bot');
+                setTheme('light');
+            } else if (command.includes('dark')) {
+                addChatbotMessage("Switching to dark mode!", 'bot');
+                setTheme('dark');
+            } else {
+                addChatbotMessage("Please specify 'light' or 'dark' mode.", 'bot');
+            }
+        }
+
+        function handleHelpCommand() {
+            addChatbotMessage(`Here's what I can help you with:
+
+💸 Send BDAG: "send 5 BDAG to 0x1234..." or "send 2 BDAG to John"
+💰 Check Balance: "check balance" or "what's my balance"
+🚰 Get Test Tokens: "get test tokens" or "faucet"
+📊 Transaction History: "show transactions" or "transaction history"
+🔍 Search Contacts: "search for John" or "find contact Alice"
+➕ Add Contact: "add new contact" or "add contact"
+🌙 Theme: "switch to light mode" or "dark mode"
+
+🎤 Voice Commands: Click the microphone button to speak your commands!
+💡 Voice Examples: "send 5 BDAG to Bhagya Sri", "check my balance", "switch to light mode"
+
+Just type or speak your command and I'll help you!`, 'bot');
+        }
+
+        function extractContactName(command) {
+            const patterns = [
+                /send.*?to\s+([a-zA-Z\s]+)/i,
+                /transfer.*?to\s+([a-zA-Z\s]+)/i
+            ];
+            
+            for (const pattern of patterns) {
+                const match = command.match(pattern);
+                if (match) return match[1].trim();
+            }
+            return null;
+        }
+
+        function extractSearchTerm(command) {
+            const patterns = [
+                /search\s+for\s+(.+)/i,
+                /find\s+contact\s+(.+)/i,
+                /search\s+(.+)/i
+            ];
+            
+            for (const pattern of patterns) {
+                const match = command.match(pattern);
+                if (match) return match[1].trim();
+            }
+            return null;
+        }
+        
+        // Load contacts when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            // Add sample contact for Bhagya Sri if no contacts exist
+            addSampleContact();
+            loadContacts();
+            
+            // Clear sample data and fetch real transactions
+            setTimeout(() => {
+                const currentWallet = window.blockchainBuddy?.currentAccount;
+                if (currentWallet) {
+                    // Clear existing sample data
+                    localStorage.removeItem('blockdag_transactions');
+                    
+                    // Fetch real transactions from blockchain
+                    fetchRealTransactions(currentWallet);
+                }
+            }, 2000); // Wait 2 seconds for wallet to connect
+        });
+
+        function addSampleContact() {
+            const contacts = JSON.parse(localStorage.getItem('wallet_contacts') || '[]');
+            
+            // Check if Bhagya Sri contact already exists
+            if (!contacts.some(contact => contact.nickname.toLowerCase().includes('bhagya'))) {
+                const bhagyaContact = {
+                    nickname: 'Bhagya Sri',
+                    address: '0x1234567890123456789012345678901234567890',
+                    notes: 'Blockchain developer and crypto enthusiast',
+                    createdAt: Date.now()
+                };
+                
+                contacts.push(bhagyaContact);
+                localStorage.setItem('wallet_contacts', JSON.stringify(contacts));
+                console.log('Added sample contact: Bhagya Sri');
+            }
+        }
+        
+        // Function to fetch real transactions from BlockDAG network
+        async function fetchRealTransactions(walletAddress) {
+            try {
+                console.log('Fetching real transactions for wallet:', walletAddress);
+                
+                // Get transaction count (nonce) for the wallet
+                const nonce = await window.blockchainBuddy.provider.request({
+                    method: 'eth_getTransactionCount',
+                    params: [walletAddress, 'latest']
+                });
+                
+                console.log('Wallet nonce:', parseInt(nonce, 16));
+                
+                // Get recent blocks to scan for transactions
+                const latestBlock = await window.blockchainBuddy.provider.request({
+                    method: 'eth_blockNumber'
+                });
+                
+                const latestBlockNumber = parseInt(latestBlock, 16);
+                console.log('Latest block:', latestBlockNumber);
+                
+                // Scan last 100 blocks for transactions involving this wallet
+                const transactions = [];
+                const blocksToScan = Math.min(100, latestBlockNumber);
+                
+                for (let i = 0; i < blocksToScan; i++) {
+                    const blockNumber = latestBlockNumber - i;
+                    try {
+                        const block = await window.blockchainBuddy.provider.request({
+                            method: 'eth_getBlockByNumber',
+                            params: [blockNumber.toString(16), true]
+                        });
+                        
+                        if (block && block.transactions) {
+                            for (const tx of block.transactions) {
+                                // Check if transaction involves our wallet
+                                if (tx.from.toLowerCase() === walletAddress.toLowerCase() || 
+                                    tx.to && tx.to.toLowerCase() === walletAddress.toLowerCase()) {
+                                    
+                                    // Get transaction receipt for status
+                                    const receipt = await window.blockchainBuddy.provider.request({
+                                        method: 'eth_getTransactionReceipt',
+                                        params: [tx.hash]
+                                    });
+                                    
+                                    const transaction = {
+                                        hash: tx.hash,
+                                        from: tx.from,
+                                        to: tx.to,
+                                        amount: window.blockchainBuddy.weiToBDAG(tx.value),
+                                        message: '', // BlockDAG doesn't support messages in transactions
+                                        network: 'BlockDAG Testnet',
+                                        timestamp: parseInt(block.timestamp, 16) * 1000,
+                                        status: receipt && receipt.status === '0x1' ? 'confirmed' : 'pending',
+                                        type: tx.to && tx.to.toLowerCase() === walletAddress.toLowerCase() ? 'credit' : 'debit'
+                                    };
+                                    
+                                    transactions.push(transaction);
+                                }
+                            }
+                        }
+                    } catch (error) {
+                        console.log('Error scanning block', blockNumber, ':', error.message);
+                        continue;
+                    }
+                }
+                
+                console.log('Found', transactions.length, 'real transactions');
+                
+                // Save real transactions to localStorage
+                localStorage.setItem('blockdag_transactions', JSON.stringify(transactions));
+                
+                // Refresh transaction history display
+                await showTransactionHistory();
+                
+            } catch (error) {
+                console.error('Error fetching real transactions:', error);
+                
+                // Fallback: show message that no transactions found
+                const transactionHistoryDiv = document.getElementById('transactionHistory');
+                if (transactionHistoryDiv) {
+                    transactionHistoryDiv.innerHTML = `
+                        <div style="text-align: center; padding: 2rem; color: var(--text-secondary);">
+                            <div style="font-size: 1.5rem; margin-bottom: 1rem;">📊</div>
+                            <div style="font-weight: 600; margin-bottom: 0.5rem;">No Transactions Found</div>
+                            <div style="font-size: 0.875rem;">No transactions found for this wallet on BlockDAG Testnet.</div>
+                            <div style="font-size: 0.875rem; margin-top: 0.5rem;">Try sending or receiving some BDAG tokens!</div>
+                        </div>
+                    `;
+                }
+            }
+        }
+        
+        // Function to refresh transaction history
+        async function refreshTransactionHistory() {
+            if (document.getElementById('transactionHistorySection').style.display !== 'none') {
+                await showTransactionHistory();
+            }
+        }
+        
+        // Function to fetch real transactions from UI
+        async function fetchRealTransactionsFromUI() {
+            const currentWallet = window.blockchainBuddy?.currentAccount;
+            if (!currentWallet) {
+                showNotification('Please connect your wallet first!', 'error');
+                return;
+            }
+            
+            // Show loading state
+            const transactionHistoryDiv = document.getElementById('transactionHistory');
+            if (transactionHistoryDiv) {
+                transactionHistoryDiv.innerHTML = `
+                    <div style="text-align: center; padding: 2rem; color: var(--text-secondary);">
+                        <div style="font-size: 1.5rem; margin-bottom: 1rem;">⏳</div>
+                        <div style="font-weight: 600; margin-bottom: 0.5rem;">Fetching Real Transactions...</div>
+                        <div style="font-size: 0.875rem;">Scanning BlockDAG blockchain for your transactions...</div>
+                    </div>
+                `;
+            }
+            
+            try {
+                await fetchRealTransactions(currentWallet);
+                showNotification('Real transactions fetched successfully!', 'success');
+            } catch (error) {
+                console.error('Error fetching real transactions:', error);
+                showNotification('Failed to fetch real transactions. Check console for details.', 'error');
+            }
+        }
+        
+        // Auto-refresh transaction history every 30 seconds if visible
+        setInterval(() => {
+            if (document.getElementById('transactionHistorySection').style.display !== 'none') {
+                refreshTransactionHistory();
+            }
+        }, 30000);
+    </script>
+</body>
+</html> 

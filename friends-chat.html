@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat with Friends - Blockchain Buddy</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="friends-chat.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Firebase CDN -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">
+                    <a href="index.html" style="text-decoration: none;">
+                        <h1 class="logo-text">Blockchain Buddy</h1>
+                    </a>
+                </div>
+                <div class="header-actions">
+                    <button class="btn btn-secondary" onclick="window.location.href='index.html'">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M19 12H5M12 19l-7-7 7-7"/>
+                        </svg>
+                        Back to Home
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main">
+        <div class="container">
+            <div class="friends-chat-container">
+                
+                <!-- Left Sidebar -->
+                <div class="friends-sidebar">
+                    <div class="sidebar-header">
+                        <h3>Friends Chat</h3>
+                        <button class="btn-icon" id="refreshFriendsBtn" title="Refresh">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="23 4 23 10 17 10"/>
+                                <polyline points="1 20 1 14 7 14"/>
+                                <path d="m3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+                            </svg>
+                        </button>
+                    </div>
+
+                    <!-- Search Section -->
+                    <div class="search-section">
+                        <div class="search-tabs">
+                            <button class="search-tab active" data-tab="search">Find Friends</button>
+                            <button class="search-tab" data-tab="requests">Requests</button>
+                        </div>
+
+                        <!-- Find Friends Tab -->
+                        <div class="search-content" id="searchTab">
+                            <div class="search-input-group">
+                                <input type="text" id="userSearchInput" placeholder="Search by email or phone..." class="search-input">
+                                <button class="btn btn-primary" id="searchUsersBtn">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <circle cx="11" cy="11" r="8"/>
+                                        <path d="m21 21-4.35-4.35"/>
+                                    </svg>
+                                </button>
+                            </div>
+                            <div class="search-results" id="searchResults">
+                                <div class="search-placeholder">
+                                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+                                        <circle cx="9" cy="7" r="4"/>
+                                        <path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>
+                                    </svg>
+                                    <p>Search for friends by email or phone number</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Friend Requests Tab -->
+                        <div class="search-content" id="requestsTab" style="display: none;">
+                            <div class="requests-list" id="friendRequestsList">
+                                <div class="search-placeholder">
+                                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+                                        <circle cx="9" cy="7" r="4"/>
+                                        <path d="M19 8v6M22 11h-6"/>
+                                    </svg>
+                                    <p>No pending friend requests</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Friends List -->
+                    <div class="friends-list-section">
+                        <div class="section-header">
+                            <h4>My Friends</h4>
+                            <span class="friends-count" id="friendsCount">0</span>
+                        </div>
+                        <div class="friends-list" id="friendsList">
+                            <div class="friends-placeholder">
+                                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                                    <circle cx="9" cy="7" r="4"/>
+                                    <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>
+                                </svg>
+                                <p>No friends yet. Start by searching for friends!</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Chat Area -->
+                <div class="chat-area">
+                    <div class="chat-welcome" id="chatWelcome">
+                        <div class="welcome-content">
+                            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                                <path d="M14 9h.01M10 9h.01M6 9h.01"/>
+                            </svg>
+                            <h3>Welcome to Friends Chat!</h3>
+                            <p>Select a friend from the sidebar to start chatting, or search for new friends to connect with.</p>
+                        </div>
+                    </div>
+
+                    <div class="active-chat" id="activeChat" style="display: none;">
+                        <div class="chat-header">
+                            <div class="chat-user-info">
+                                <div class="user-avatar" id="chatUserAvatar">
+                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                                        <circle cx="12" cy="7" r="4"/>
+                                    </svg>
+                                </div>
+                                <div class="user-details">
+                                    <h4 id="chatUserName">Friend Name</h4>
+                                    <span class="user-status" id="chatUserStatus">Online</span>
+                                </div>
+                            </div>
+                            <div class="chat-actions">
+                                <button class="btn-icon" title="Video Call">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <polygon points="23 7 16 12 23 17 23 7"/>
+                                        <rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
+                                    </svg>
+                                </button>
+                                <button class="btn-icon" title="Voice Call">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
+                                    </svg>
+                                </button>
+                                <button class="btn-icon" id="closeChatBtn" title="Close Chat">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <line x1="18" y1="6" x2="6" y2="18"/>
+                                        <line x1="6" y1="6" x2="18" y2="18"/>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="chat-messages" id="chatMessages">
+                            <!-- Messages will be dynamically added here -->
+                        </div>
+
+                        <div class="chat-input-area">
+                            <div class="chat-input-container">
+                                <input type="text" id="messageInput" placeholder="Type your message..." class="message-input">
+                                <button class="btn btn-primary" id="sendMessageBtn">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <line x1="22" y1="2" x2="11" y2="13"/>
+                                        <polygon points="22,2 15,22 11,13 2,9 22,2"/>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="friends-chat.js"></script>
+</body>
+</html> 
