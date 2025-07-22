@@ -1880,8 +1880,7 @@ Just type or speak your command and I'll help you!`, 'bot');
         document.addEventListener('DOMContentLoaded', function() {
             // Wait for wallet connection before loading contacts
             setTimeout(() => {
-                // Add sample contact for Bhagya Sri if no contacts exist
-                addSampleContact();
+                // Load contacts for the connected wallet
                 loadContacts();
                 
                 // Clear sample data and fetch real transactions
@@ -1896,24 +1895,7 @@ Just type or speak your command and I'll help you!`, 'bot');
             }, 2000); // Wait 2 seconds for wallet to connect
         });
 
-        function addSampleContact() {
-            const contactsKey = getContactsKey();
-            const contacts = JSON.parse(localStorage.getItem(contactsKey) || '[]');
-            
-            // Check if Bhagya Sri contact already exists
-            if (!contacts.some(contact => contact.nickname.toLowerCase().includes('bhagya'))) {
-                const bhagyaContact = {
-                    nickname: 'Bhagya Sri',
-                    address: '0x1234567890123456789012345678901234567890',
-                    notes: 'Blockchain developer and crypto enthusiast',
-                    createdAt: Date.now()
-                };
-                
-                contacts.push(bhagyaContact);
-                localStorage.setItem(contactsKey, JSON.stringify(contacts));
-                console.log('Added sample contact: Bhagya Sri for wallet:', getCurrentWalletAddress());
-            }
-        }
+
         
         // Function to fetch real transactions from BlockDAG network
         async function fetchRealTransactions(walletAddress) {
