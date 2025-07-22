@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voice Command Test - Blockchain Buddy</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+        }
+
+        .test-container {
+            background: white;
+            border-radius: 1rem;
+            padding: 2rem;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            max-width: 500px;
+            width: 100%;
+        }
+
+        .test-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .test-header h1 {
+            color: #333;
+            margin-bottom: 0.5rem;
+        }
+
+        .test-header p {
+            color: #666;
+            font-size: 0.875rem;
+        }
+
+        .status-card {
+            background: #f8f9fa;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .status-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+
+        .status-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .status-icon {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            margin-right: 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-weight: bold;
+        }
+
+        .status-icon.success {
+            background: #28a745;
+            color: white;
+        }
+
+        .status-icon.warning {
+            background: #ffc107;
+            color: #333;
+        }
+
+        .status-icon.error {
+            background: #dc3545;
+            color: white;
+        }
+
+        .test-button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 0.5rem;
+            font-size: 1rem;
+            cursor: pointer;
+            width: 100%;
+            margin-bottom: 1rem;
+            transition: background 0.3s;
+        }
+
+        .test-button:hover {
+            background: #0056b3;
+        }
+
+        .test-button:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+        }
+
+        .test-button.recording {
+            background: #dc3545;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.7; }
+            100% { opacity: 1; }
+        }
+
+        .result-area {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            min-height: 100px;
+            margin-bottom: 1rem;
+        }
+
+        .back-button {
+            background: #6c757d;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .back-button:hover {
+            background: #545b62;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <div class="test-header">
+            <h1>🎤 Voice Command Test</h1>
+            <p>Test your microphone and voice recognition setup</p>
+        </div>
+
+        <div class="status-card">
+            <div class="status-item">
+                <div class="status-icon" id="httpsStatus">?</div>
+                <span id="httpsText">Checking HTTPS...</span>
+            </div>
+            <div class="status-item">
+                <div class="status-icon" id="browserStatus">?</div>
+                <span id="browserText">Checking browser support...</span>
+            </div>
+            <div class="status-item">
+                <div class="status-icon" id="microphoneStatus">?</div>
+                <span id="microphoneText">Checking microphone...</span>
+            </div>
+        </div>
+
+        <button class="test-button" id="testButton" onclick="startVoiceTest()">
+            🎤 Start Voice Test
+        </button>
+
+        <div class="result-area" id="resultArea">
+            <div style="text-align: center; color: #666;">
+                Click the button above to start the voice test
+            </div>
+        </div>
+
+        <div style="text-align: center;">
+            <a href="wallet.html" class="back-button">← Back to Wallet</a>
+        </div>
+    </div>
+
+    <script>
+        let recognition = null;
+        let isRecording = false;
+
+        // Check status on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            checkStatus();
+        });
+
+        function checkStatus() {
+            // Check HTTPS
+            const isSecure = window.location.protocol === 'https:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+            const httpsStatus = document.getElementById('httpsStatus');
+            const httpsText = document.getElementById('httpsText');
+            
+            if (isSecure) {
+                httpsStatus.className = 'status-icon success';
+                httpsStatus.textContent = '✓';
+                httpsText.textContent = 'HTTPS/SSL: Secure';
+            } else {
+                httpsStatus.className = 'status-icon error';
+                httpsStatus.textContent = '✗';
+                httpsText.textContent = 'HTTPS/SSL: Not secure (required for voice)';
+            }
+
+            // Check browser support
+            const isSupported = 'webkitSpeechRecognition' in window || 'SpeechRecognition' in window;
+            const browserStatus = document.getElementById('browserStatus');
+            const browserText = document.getElementById('browserText');
+            
+            if (isSupported) {
+                browserStatus.className = 'status-icon success';
+                browserStatus.textContent = '✓';
+                browserText.textContent = 'Browser: Supported';
+            } else {
+                browserStatus.className = 'status-icon error';
+                browserStatus.textContent = '✗';
+                browserText.textContent = 'Browser: Not supported (use Chrome/Edge/Safari)';
+            }
+
+            // Check microphone (will be updated when user tries to use it)
+            const microphoneStatus = document.getElementById('microphoneStatus');
+            const microphoneText = document.getElementById('microphoneText');
+            microphoneStatus.className = 'status-icon warning';
+            microphoneStatus.textContent = '?';
+            microphoneText.textContent = 'Microphone: Click test to check';
+        }
+
+        function startVoiceTest() {
+            const testButton = document.getElementById('testButton');
+            const resultArea = document.getElementById('resultArea');
+
+            if (isRecording) {
+                recognition.stop();
+                return;
+            }
+
+            // Check if voice recognition is supported
+            if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
+                resultArea.innerHTML = '<div style="color: #dc3545;">❌ Voice recognition not supported in this browser. Please use Chrome, Edge, or Safari.</div>';
+                return;
+            }
+
+            // Check if HTTPS is available
+            const isSecure = window.location.protocol === 'https:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+            if (!isSecure) {
+                resultArea.innerHTML = '<div style="color: #dc3545;">❌ Voice recognition requires HTTPS or localhost. Please use the deployed version.</div>';
+                return;
+            }
+
+            // Initialize speech recognition
+            recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+            recognition.continuous = false;
+            recognition.interimResults = false;
+            recognition.lang = 'en-US';
+
+            recognition.onstart = function() {
+                isRecording = true;
+                testButton.textContent = '🛑 Stop Recording';
+                testButton.classList.add('recording');
+                resultArea.innerHTML = '<div style="text-align: center; color: #007bff;">🎤 Listening... Speak now!</div>';
+                
+                // Update microphone status
+                const microphoneStatus = document.getElementById('microphoneStatus');
+                const microphoneText = document.getElementById('microphoneText');
+                microphoneStatus.className = 'status-icon success';
+                microphoneStatus.textContent = '✓';
+                microphoneText.textContent = 'Microphone: Access granted';
+            };
+
+            recognition.onresult = function(event) {
+                const transcript = event.results[0][0].transcript;
+                resultArea.innerHTML = `
+                    <div style="color: #28a745; margin-bottom: 1rem;">✅ Voice recognition working!</div>
+                    <div style="background: #e9ecef; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1rem;">
+                        <strong>You said:</strong> "${transcript}"
+                    </div>
+                    <div style="color: #666; font-size: 0.875rem;">
+                        Voice commands are working correctly! You can now use voice commands in the main wallet.
+                    </div>
+                `;
+            };
+
+            recognition.onerror = function(event) {
+                console.error('Speech recognition error:', event.error);
+                let errorMessage = 'Voice recognition error.';
+                
+                switch(event.error) {
+                    case 'no-speech':
+                        errorMessage = 'No speech detected. Please speak clearly.';
+                        break;
+                    case 'audio-capture':
+                        errorMessage = 'Microphone not found. Please check your microphone.';
+                        break;
+                    case 'not-allowed':
+                        errorMessage = 'Microphone access denied. Please allow microphone access in your browser settings.';
+                        break;
+                    case 'network':
+                        errorMessage = 'Network error. Please check your connection.';
+                        break;
+                    case 'service-not-allowed':
+                        errorMessage = 'Voice recognition service not available.';
+                        break;
+                }
+                
+                resultArea.innerHTML = `<div style="color: #dc3545;">❌ ${errorMessage}</div>`;
+                
+                // Update microphone status
+                const microphoneStatus = document.getElementById('microphoneStatus');
+                const microphoneText = document.getElementById('microphoneText');
+                microphoneStatus.className = 'status-icon error';
+                microphoneStatus.textContent = '✗';
+                microphoneText.textContent = 'Microphone: Access denied';
+            };
+
+            recognition.onend = function() {
+                isRecording = false;
+                testButton.textContent = '🎤 Start Voice Test';
+                testButton.classList.remove('recording');
+            };
+
+            try {
+                recognition.start();
+            } catch (error) {
+                console.error('Error starting speech recognition:', error);
+                resultArea.innerHTML = '<div style="color: #dc3545;">❌ Error starting voice recognition. Please try again.</div>';
+            }
+        }
+    </script>
+</body>
+</html> 

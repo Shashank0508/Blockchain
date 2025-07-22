@@ -665,9 +665,16 @@
                     • View transaction history<br>
                     • Search contacts<br>
                     • Add new contacts<br>
-                    • Switch themes
+                    • Switch themes<br>
+                    • Network information<br>
+                    • Security tips<br>
+                    • Gas fees info
                 </div>
                 <div style="margin-top: 0.5rem;">Just type your command or use voice commands! 🎤</div>
+                <div id="voiceStatusMessage" style="margin-top: 0.5rem; font-size: 0.875rem; color: var(--text-secondary);"></div>
+                <div style="margin-top: 0.5rem; font-size: 0.75rem;">
+                    <a href="voice-test.html" target="_blank" style="color: var(--accent-color); text-decoration: none;">🧪 Test Voice Commands</a>
+                </div>
             </div>
         </div>
         <div class="chatbot-input-container">
@@ -1639,6 +1646,19 @@
 
         // Initialize speech recognition
         function initSpeechRecognition() {
+            // Check if we're on HTTPS or localhost (required for voice recognition)
+            const isSecure = window.location.protocol === 'https:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+            
+            if (!isSecure) {
+                console.log('Voice recognition requires HTTPS or localhost');
+                const deploymentUrl = getDeploymentUrl();
+                const message = deploymentUrl 
+                    ? `🎤 Voice commands require HTTPS. Please use the deployed version: ${deploymentUrl}`
+                    : "🎤 Voice commands require HTTPS or localhost. Please use the deployed version or run locally.";
+                addChatbotMessage(message, 'bot');
+                return;
+            }
+            
             if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
                 recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
                 recognition.continuous = false;
@@ -1676,10 +1696,19 @@
                             errorMessage = 'Microphone not found. Please check your microphone.';
                             break;
                         case 'not-allowed':
-                            errorMessage = 'Microphone access denied. Please allow microphone access.';
+                            errorMessage = 'Microphone access denied. Please allow microphone access in your browser settings.';
                             break;
                         case 'network':
-                            errorMessage = 'Network error. Please check your connection.';
+                            errorMessage = 'Network error. Please check your connection and try again.';
+                            break;
+                        case 'service-not-allowed':
+                            errorMessage = 'Voice recognition service not available. Please try a different browser.';
+                            break;
+                        case 'bad-grammar':
+                            errorMessage = 'Voice recognition error. Please try speaking more clearly.';
+                            break;
+                        case 'language-not-supported':
+                            errorMessage = 'Language not supported. Please try English.';
                             break;
                     }
                     
@@ -1694,11 +1723,34 @@
                 };
             } else {
                 console.log('Speech recognition not supported');
-                addChatbotMessage("Voice recognition is not supported in your browser. Please use text input.", 'bot');
+                addChatbotMessage("🎤 Voice recognition is not supported in your browser. Please use Chrome, Edge, or Safari.", 'bot');
             }
         }
 
+        function getDeploymentUrl() {
+            // Check if we're on a known deployment platform
+            const hostname = window.location.hostname;
+            if (hostname.includes('onrender.com')) {
+                return `https://${hostname}`;
+            } else if (hostname.includes('vercel.app')) {
+                return `https://${hostname}`;
+            } else if (hostname.includes('netlify.app')) {
+                return `https://${hostname}`;
+            } else if (hostname.includes('github.io')) {
+                return `https://${hostname}`;
+            }
+            return null;
+        }
+
         function toggleVoiceRecognition() {
+            // Check if we're on HTTPS or localhost
+            const isSecure = window.location.protocol === 'https:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+            
+            if (!isSecure) {
+                addChatbotMessage("🎤 Voice commands require HTTPS or localhost. Please use the deployed version or run locally.", 'bot');
+                return;
+            }
+            
             if (!recognition) {
                 initSpeechRecognition();
             }
@@ -1710,7 +1762,7 @@
                     recognition.start();
                 } catch (error) {
                     console.error('Error starting speech recognition:', error);
-                    addChatbotMessage("Error starting voice recognition. Please try again.", 'bot');
+                    addChatbotMessage("🎤 Error starting voice recognition. Please check your microphone permissions and try again.", 'bot');
                 }
             }
         }
@@ -1727,6 +1779,10 @@
                 if (!recognition) {
                     initSpeechRecognition();
                 }
+                
+                // Check and update voice button status
+                updateVoiceButtonStatus();
+                updateVoiceStatusMessage();
             } else {
                 container.style.display = 'none';
                 
@@ -1734,6 +1790,45 @@
                 if (isRecording && recognition) {
                     recognition.stop();
                 }
+            }
+        }
+
+        function updateVoiceButtonStatus() {
+            const voiceButton = document.getElementById('voiceButton');
+            const isSecure = window.location.protocol === 'https:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+            const isSupported = 'webkitSpeechRecognition' in window || 'SpeechRecognition' in window;
+            
+            if (!isSecure) {
+                voiceButton.title = 'Voice commands require HTTPS or localhost';
+                voiceButton.style.opacity = '0.5';
+                voiceButton.style.cursor = 'not-allowed';
+            } else if (!isSupported) {
+                voiceButton.title = 'Voice recognition not supported in this browser';
+                voiceButton.style.opacity = '0.5';
+                voiceButton.style.cursor = 'not-allowed';
+            } else {
+                voiceButton.title = 'Voice Command (Click to speak)';
+                voiceButton.style.opacity = '1';
+                voiceButton.style.cursor = 'pointer';
+            }
+        }
+
+        function updateVoiceStatusMessage() {
+            const statusMessage = document.getElementById('voiceStatusMessage');
+            const isSecure = window.location.protocol === 'https:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+            const isSupported = 'webkitSpeechRecognition' in window || 'SpeechRecognition' in window;
+            
+            if (!isSecure) {
+                const deploymentUrl = getDeploymentUrl();
+                if (deploymentUrl) {
+                    statusMessage.innerHTML = `⚠️ Voice commands require HTTPS. <a href="${deploymentUrl}" target="_blank" style="color: var(--accent-color);">Use deployed version</a>`;
+                } else {
+                    statusMessage.innerHTML = '⚠️ Voice commands require HTTPS or localhost. Use deployed version or run locally.';
+                }
+            } else if (!isSupported) {
+                statusMessage.innerHTML = '⚠️ Voice recognition not supported in this browser. Use Chrome, Edge, or Safari.';
+            } else {
+                statusMessage.innerHTML = '✅ Voice commands available! Click the 🎤 button to speak.';
             }
         }
 
@@ -1773,22 +1868,44 @@
             setTimeout(() => {
                 if (lowerCommand.includes('send') || lowerCommand.includes('transfer')) {
                     handleSendCommand(command);
-                } else if (lowerCommand.includes('balance') || lowerCommand.includes('check balance')) {
+                } else if (lowerCommand.includes('balance') || lowerCommand.includes('check balance') || lowerCommand.includes('how much') || lowerCommand.includes('what\'s my balance')) {
                     handleBalanceCommand();
-                } else if (lowerCommand.includes('test token') || lowerCommand.includes('faucet')) {
+                } else if (lowerCommand.includes('test token') || lowerCommand.includes('faucet') || lowerCommand.includes('get tokens')) {
                     handleTestTokenCommand();
-                } else if (lowerCommand.includes('transaction') || lowerCommand.includes('history')) {
+                } else if (lowerCommand.includes('transaction') || lowerCommand.includes('history') || lowerCommand.includes('transactions')) {
                     handleTransactionHistoryCommand();
-                } else if (lowerCommand.includes('search') || lowerCommand.includes('find contact')) {
+                } else if (lowerCommand.includes('search') || lowerCommand.includes('find contact') || lowerCommand.includes('find')) {
                     handleSearchCommand(command);
-                } else if (lowerCommand.includes('add contact') || lowerCommand.includes('new contact')) {
+                } else if (lowerCommand.includes('add contact') || lowerCommand.includes('new contact') || lowerCommand.includes('add')) {
                     handleAddContactCommand();
-                } else if (lowerCommand.includes('theme') || lowerCommand.includes('dark') || lowerCommand.includes('light')) {
+                } else if (lowerCommand.includes('theme') || lowerCommand.includes('dark') || lowerCommand.includes('light') || lowerCommand.includes('mode')) {
                     handleThemeCommand(lowerCommand);
-                } else if (lowerCommand.includes('help') || lowerCommand.includes('what can you do')) {
+                } else if (lowerCommand.includes('help') || lowerCommand.includes('what can you do') || lowerCommand.includes('commands')) {
                     handleHelpCommand();
+                } else if (lowerCommand.includes('connect') || lowerCommand.includes('wallet') || lowerCommand.includes('metamask')) {
+                    handleWalletConnectionCommand();
+                } else if (lowerCommand.includes('network') || lowerCommand.includes('blockdag') || lowerCommand.includes('testnet')) {
+                    handleNetworkCommand();
+                } else if (lowerCommand.includes('explorer') || lowerCommand.includes('view') || lowerCommand.includes('blockchain')) {
+                    handleExplorerCommand();
+                } else if (lowerCommand.includes('contact') || lowerCommand.includes('contacts') || lowerCommand.includes('address')) {
+                    handleContactsCommand();
+                } else if (lowerCommand.includes('gas') || lowerCommand.includes('fee') || lowerCommand.includes('cost')) {
+                    handleGasCommand();
+                } else if (lowerCommand.includes('price') || lowerCommand.includes('value') || lowerCommand.includes('worth')) {
+                    handlePriceCommand();
+                } else if (lowerCommand.includes('security') || lowerCommand.includes('safe') || lowerCommand.includes('secure')) {
+                    handleSecurityCommand();
+                } else if (lowerCommand.includes('backup') || lowerCommand.includes('export') || lowerCommand.includes('private key')) {
+                    handleBackupCommand();
+                } else if (lowerCommand.includes('hello') || lowerCommand.includes('hi') || lowerCommand.includes('hey')) {
+                    handleGreetingCommand();
+                } else if (lowerCommand.includes('thank') || lowerCommand.includes('thanks')) {
+                    handleThanksCommand();
+                } else if (lowerCommand.includes('how') || lowerCommand.includes('what') || lowerCommand.includes('why') || lowerCommand.includes('when') || lowerCommand.includes('where')) {
+                    handleGeneralQuestionCommand(command);
                 } else {
-                    addChatbotMessage("I'm not sure how to help with that. Try saying 'help' to see what I can do!", 'bot');
+                    handleUnknownCommand(command);
                 }
             }, 500);
         }
@@ -1887,18 +2004,29 @@
         }
 
         function handleHelpCommand() {
-            addChatbotMessage(`Here's what I can help you with:
+            addChatbotMessage(`🤖 Here's what I can help you with:
 
-💸 Send BDAG: "send 5 BDAG to 0x1234..." or "send 2 BDAG to John"
-💰 Check Balance: "check balance" or "what's my balance"
-🚰 Get Test Tokens: "get test tokens" or "faucet"
-📊 Transaction History: "show transactions" or "transaction history"
-🔍 Search Contacts: "search for John" or "find contact Alice"
-➕ Add Contact: "add new contact" or "add contact"
-🌙 Theme: "switch to light mode" or "dark mode"
+💸 **Send BDAG**: "send 5 BDAG to 0x1234..." or "send 2 BDAG to John"
+💰 **Check Balance**: "check balance" or "what's my balance"
+🚰 **Get Test Tokens**: "get test tokens" or "faucet"
+📊 **Transaction History**: "show transactions" or "transaction history"
+🔍 **Search Contacts**: "search for John" or "find contact Alice"
+➕ **Add Contact**: "add new contact" or "add contact"
+🌙 **Theme**: "switch to light mode" or "dark mode"
 
-🎤 Voice Commands: Click the microphone button to speak your commands!
-                💡 Voice Examples: "send 5 BDAG to contact", "check my balance", "switch to light mode"
+🔗 **Wallet Connection**: "connect wallet" or "metamask"
+🌐 **Network Info**: "network" or "blockdag"
+🔍 **Explorer**: "explorer" or "view blockchain"
+📇 **Contacts**: "contacts" or "address book"
+⛽ **Gas Info**: "gas" or "fees"
+💰 **Token Info**: "price" or "value"
+🔒 **Security**: "security" or "safe"
+💾 **Backup**: "backup" or "export"
+
+❓ **General Questions**: "how to send", "what is blockdag", "how to get tokens"
+
+🎤 **Voice Commands**: Click the microphone button to speak your commands!
+💡 **Voice Examples**: "send 5 BDAG to contact", "check my balance", "switch to light mode"
 
 Just type or speak your command and I'll help you!`, 'bot');
         }
@@ -1928,6 +2056,196 @@ Just type or speak your command and I'll help you!`, 'bot');
                 if (match) return match[1].trim();
             }
             return null;
+        }
+
+        // New enhanced command handlers
+        function handleWalletConnectionCommand() {
+            if (window.blockchainBuddy && window.blockchainBuddy.isConnected) {
+                const account = window.blockchainBuddy.currentAccount;
+                const shortAddress = account ? `${account.slice(0, 6)}...${account.slice(-4)}` : 'your wallet';
+                addChatbotMessage(`✅ Your wallet is already connected!\n\n📱 Address: ${shortAddress}\n🌐 Network: BlockDAG Testnet\n\nYou can now send transactions and check your balance.`, 'bot');
+            } else {
+                addChatbotMessage(`🔗 Let me help you connect your MetaMask wallet!\n\n1. Click the "Connect Wallet" button above\n2. Or I can help you connect - just say "connect wallet"\n3. Make sure MetaMask is installed and unlocked\n\nOnce connected, you'll be able to send BDAG and check your balance!`, 'bot');
+            }
+        }
+
+        function handleNetworkCommand() {
+            addChatbotMessage(`🌐 BlockDAG Network Information:
+
+📋 Network Name: BlockDAG Testnet (Primordial)
+🔗 RPC URL: https://rpc.primordial.bdagscan.com
+🆔 Chain ID: 1043
+💰 Currency: BDAG
+🔍 Explorer: https://primordial.bdagscan.com
+
+💡 To switch networks in MetaMask:
+1. Open MetaMask
+2. Click the network dropdown
+3. Select "BlockDAG Testnet" or add it manually
+4. If not available, I can help you add it!`, 'bot');
+        }
+
+        function handleExplorerCommand() {
+            addChatbotMessage(`🔍 Opening BlockDAG Explorer...\n\nYou can view your transactions, check network status, and explore the blockchain.\n\nIf you have a wallet connected, I'll show your specific address.`, 'bot');
+            openExplorer();
+        }
+
+        function handleContactsCommand() {
+            const contactsKey = getContactsKey();
+            const contacts = JSON.parse(localStorage.getItem(contactsKey) || '[]');
+            
+            if (contacts.length === 0) {
+                addChatbotMessage(`📇 You don't have any contacts saved yet.\n\n➕ To add a contact:\n1. Click "Add New Contact" button\n2. Or say "add contact"\n3. Enter nickname and wallet address\n\n💡 Contacts make it easier to send BDAG to frequent recipients!`, 'bot');
+            } else {
+                const contactList = contacts.map(c => `• ${c.nickname}: ${c.address.slice(0, 10)}...${c.address.slice(-8)}`).join('\n');
+                addChatbotMessage(`📇 Your Contacts (${contacts.length}):\n\n${contactList}\n\n💡 Say "search for [name]" to find a specific contact!`, 'bot');
+            }
+        }
+
+        function handleGasCommand() {
+            addChatbotMessage(`⛽ Gas Information for BlockDAG:
+
+💰 Gas Price: ~0.000001 BDAG per gas unit
+📊 Average Transaction Cost: ~0.0001 BDAG
+⚡ Fast Transactions: BlockDAG's DAG structure enables high throughput
+🔄 Gas Estimation: Automatically calculated for each transaction
+
+💡 Gas costs are very low on BlockDAG compared to other networks!
+💡 Your transaction cost will be shown before confirmation.`, 'bot');
+        }
+
+        function handlePriceCommand() {
+            addChatbotMessage(`💰 BDAG Token Information:
+
+🪙 Token: BDAG (BlockDAG)
+🌐 Network: BlockDAG Testnet
+💎 Current Value: Test tokens (no real value)
+📈 Market Cap: Testnet only
+🔄 Supply: Unlimited on testnet
+
+💡 This is the testnet version of BDAG for development and testing.
+💡 Real BDAG tokens will be available on mainnet when launched.
+💡 Test tokens can be obtained from the faucet for free!`, 'bot');
+        }
+
+        function handleSecurityCommand() {
+            addChatbotMessage(`🔒 Security Best Practices:
+
+✅ Always verify transaction details before confirming
+✅ Double-check recipient addresses
+✅ Keep your private keys secure and never share them
+✅ Use hardware wallets for large amounts
+✅ Enable MetaMask security features
+✅ Be cautious of phishing attempts
+
+⚠️ Never share your private key or seed phrase
+⚠️ Don't connect to suspicious websites
+⚠️ Verify URLs before entering wallet information
+
+🛡️ This wallet uses MetaMask for secure key management.`, 'bot');
+        }
+
+        function handleBackupCommand() {
+            addChatbotMessage(`💾 Backup and Recovery:
+
+📱 MetaMask Backup:
+1. Open MetaMask extension
+2. Click the account menu (three dots)
+3. Go to "Settings" → "Security & Privacy"
+4. Click "Export Private Key" or "Reveal Seed Phrase"
+5. Store securely offline
+
+📋 Contact Backup:
+• Your contacts are stored locally in your browser
+• Export them by copying from localStorage
+• Consider backing up important addresses
+
+⚠️ Never share your private keys or seed phrases!
+⚠️ Store backups securely offline`, 'bot');
+        }
+
+        function handleGreetingCommand() {
+            const greetings = [
+                "👋 Hello! How can I help you with your BlockDAG wallet today?",
+                "🤖 Hi there! I'm your AI wallet assistant. What would you like to do?",
+                "💫 Hey! Ready to manage your BDAG tokens?",
+                "🚀 Hello! Let's get your BlockDAG wallet working smoothly!"
+            ];
+            const randomGreeting = greetings[Math.floor(Math.random() * greetings.length)];
+            addChatbotMessage(randomGreeting, 'bot');
+        }
+
+        function handleThanksCommand() {
+            const thanks = [
+                "😊 You're welcome! Happy to help with your BlockDAG wallet!",
+                "🙏 Anytime! Let me know if you need anything else.",
+                "💫 My pleasure! Your wallet success is my priority!",
+                "🤖 No problem! I'm here whenever you need assistance."
+            ];
+            const randomThanks = thanks[Math.floor(Math.random() * thanks.length)];
+            addChatbotMessage(randomThanks, 'bot');
+        }
+
+        function handleGeneralQuestionCommand(command) {
+            const lowerCommand = command.toLowerCase();
+            
+            if (lowerCommand.includes('how to send') || lowerCommand.includes('how do i send')) {
+                addChatbotMessage(`📤 How to Send BDAG:
+
+1. Connect your MetaMask wallet
+2. Click "Send BDAG" button or say "send 5 BDAG to [address]"
+3. Enter recipient address or select from contacts
+4. Enter amount to send
+5. Review transaction details
+6. Confirm in MetaMask
+
+💡 You can also use voice commands: "send 5 BDAG to John"`, 'bot');
+            } else if (lowerCommand.includes('how to get') || lowerCommand.includes('how do i get')) {
+                addChatbotMessage(`🚰 How to Get Test BDAG:
+
+1. Click "Get Test BDAG" button or say "get test tokens"
+2. Visit the BlockDAG faucet
+3. Enter your wallet address
+4. Request test tokens (try 50 BDAG first)
+5. Wait 2-5 minutes for tokens to arrive
+6. Refresh your wallet to see the balance
+
+💡 Test tokens are free and unlimited on testnet!`, 'bot');
+            } else if (lowerCommand.includes('what is blockdag') || lowerCommand.includes('what is bdag')) {
+                addChatbotMessage(`🌐 What is BlockDAG?
+
+BlockDAG is a next-generation blockchain technology that combines:
+• Directed Acyclic Graph (DAG) structure
+• High transaction throughput
+• Low gas fees
+• Scalable architecture
+• Fast finality
+
+💡 BDAG is the native token of the BlockDAG network
+💡 This wallet supports BlockDAG testnet for development`, 'bot');
+            } else if (lowerCommand.includes('what can you do') || lowerCommand.includes('what do you do')) {
+                handleHelpCommand();
+            } else {
+                addChatbotMessage(`🤔 I'm not sure about that specific question. Try asking me about:
+• How to send BDAG
+• How to get test tokens
+• What is BlockDAG
+• Wallet features
+• Network information
+
+Or say "help" to see all my capabilities!`, 'bot');
+            }
+        }
+
+        function handleUnknownCommand(command) {
+            const suggestions = [
+                "Try saying 'help' to see what I can do!",
+                "I can help with sending BDAG, checking balance, getting test tokens, and more. Say 'help' for the full list!",
+                "Not sure about that. Try 'help' to see my capabilities!",
+                "I'm here to help with your BlockDAG wallet. Say 'help' to learn more!"
+            ];
+            const randomSuggestion = suggestions[Math.floor(Math.random() * suggestions.length)];
+            addChatbotMessage(randomSuggestion, 'bot');
         }
         
 
@@ -2211,6 +2529,24 @@ Just type or speak your command and I'll help you!`, 'bot');
             }
         }
         
+        // Initialize voice command status on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            // Check voice command availability
+            const isSecure = window.location.protocol === 'https:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+            const isSupported = 'webkitSpeechRecognition' in window || 'SpeechRecognition' in window;
+            
+            if (!isSecure) {
+                console.log('Voice commands not available: HTTPS required');
+                const deploymentUrl = getDeploymentUrl();
+                if (deploymentUrl) {
+                    console.log('Deployment URL available:', deploymentUrl);
+                }
+            } else if (!isSupported) {
+                console.log('Voice commands not available: Browser not supported');
+            } else {
+                console.log('Voice commands available');
+            }
+        });
 
     </script>
 </body>

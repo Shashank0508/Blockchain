@@ -144,6 +144,19 @@ blockchain-buddy-wallet/
 3. **MetaMask**: Users need MetaMask installed for wallet features
 4. **BlockDAG Network**: Configure MetaMask for BlockDAG testnet
 
+## 🎤 Voice Commands
+
+### Requirements
+- **HTTPS**: Voice commands only work on HTTPS or localhost
+- **Browser**: Chrome, Edge, or Safari (Firefox has limited support)
+- **Microphone**: Must allow microphone access when prompted
+
+### Troubleshooting Voice Commands
+1. **Network Error**: Use the deployed HTTPS version instead of local development
+2. **Microphone Denied**: Allow microphone access in browser settings
+3. **Not Working**: Try the voice test page (`voice-test.html`) to diagnose issues
+4. **Browser Issues**: Switch to Chrome or Edge for best compatibility
+
 ## 🐛 Troubleshooting
 
 ### Common Issues
