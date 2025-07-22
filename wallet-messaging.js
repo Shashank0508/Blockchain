@@ -81,13 +81,12 @@ class WalletMessaging {
 
     // Initialize encryption
     async initEncryption() {
-        // Clear any corrupted keys and generate fresh one
-        localStorage.removeItem('wallet_messaging_key');
+        // Force clear all messaging data to start fresh
+        this.clearAllMessagingData();
+        
+        // Generate fresh encryption key
         this.encryptionKey = await this.getOrGenerateKey();
         console.log('Encryption initialized with new key');
-        
-        // Clear legacy messages to prevent decryption errors
-        this.clearLegacyMessages();
     }
 
     // Clear legacy messages with old format
@@ -115,6 +114,31 @@ class WalletMessaging {
                 localStorage.removeItem(key);
             }
         });
+
+        // Also clear any wallet messaging related keys
+        const messagingKeys = keys.filter(key => key.includes('wallet_messaging') || key.includes('messaging'));
+        messagingKeys.forEach(key => {
+            console.log(`Clearing messaging data: ${key}`);
+            localStorage.removeItem(key);
+        });
+    }
+
+    // Force clear all messaging data (for debugging)
+    clearAllMessagingData() {
+        const keys = Object.keys(localStorage);
+        const messagingKeys = keys.filter(key => 
+            key.startsWith('chat_') || 
+            key.includes('wallet_messaging') || 
+            key.includes('messaging') ||
+            key.includes('contacts')
+        );
+        
+        messagingKeys.forEach(key => {
+            console.log(`Clearing all messaging data: ${key}`);
+            localStorage.removeItem(key);
+        });
+        
+        console.log('All messaging data cleared. Starting fresh.');
     }
 
     // Get or generate encryption key
@@ -177,6 +201,12 @@ class WalletMessaging {
                 return '[Legacy Message]';
             }
 
+            // Validate data types
+            if (!Array.isArray(encryptedData.iv) || !Array.isArray(encryptedData.encrypted)) {
+                console.warn('Invalid data format for decryption');
+                return '[Invalid Message Format]';
+            }
+
             // Convert hex key to bytes
             const keyBytes = this.hexToBytes(this.encryptionKey);
             
@@ -197,7 +227,14 @@ class WalletMessaging {
             return new TextDecoder().decode(decrypted);
         } catch (error) {
             console.error('Decryption failed:', error);
-            return '[Encrypted Message]';
+            // Return a more specific error message based on the error type
+            if (error.name === 'OperationError') {
+                return '[Corrupted Message]';
+            } else if (error.name === 'DataError') {
+                return '[Invalid Message Data]';
+            } else {
+                return '[Encrypted Message]';
+            }
         }
     }
 
