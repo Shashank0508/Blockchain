@@ -588,9 +588,10 @@ class WalletMessaging {
     // Close chat
     closeChat() {
         this.currentChat = null;
-        const chatContainer = document.getElementById('chatInterface');
+        const chatContainer = document.getElementById('messagingInterface');
         if (chatContainer) {
             chatContainer.innerHTML = '';
+            chatContainer.style.display = 'none';
         }
     }
 

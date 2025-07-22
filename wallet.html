@@ -789,6 +789,33 @@
     <!-- Messaging Interface -->
     <div id="messagingInterface" class="chat-interface" style="display: none;">
         <!-- Chat interface will be dynamically populated -->
+        <div class="chat-header">
+            <div class="chat-contact-info">
+                <div class="contact-avatar">💬</div>
+                <div class="contact-details">
+                    <div class="contact-name">Wallet Messaging</div>
+                    <div class="contact-status">🟢 Ready</div>
+                </div>
+            </div>
+            <div class="chat-actions">
+                <button class="btn btn-secondary" onclick="closeMessagingInterface()">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 6L6 18M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+        <div class="chat-messages" id="chatMessages">
+            <div style="text-align: center; color: var(--text-secondary); padding: 2rem;">
+                <div style="font-size: 1.5rem; margin-bottom: 1rem;">💬</div>
+                <div>Welcome to Wallet Messaging!</div>
+                <div style="font-size: 0.9rem; margin-top: 1rem;">Add contacts to start chatting</div>
+            </div>
+        </div>
+        <div class="chat-input">
+            <input type="text" id="messageInput" placeholder="Type your message..." disabled>
+            <button class="btn btn-primary" disabled>Send</button>
+        </div>
     </div>
 
     <!-- Image Modal for Messages -->
@@ -2668,16 +2695,30 @@ Or say "help" to see all my capabilities!`, 'bot');
 
         // Messaging System Functions
         function openMessagingInterface() {
+            console.log('Opening messaging interface...');
             const messagingInterface = document.getElementById('messagingInterface');
+            console.log('Messaging interface element:', messagingInterface);
+            
             if (messagingInterface) {
                 messagingInterface.style.display = 'flex';
+                console.log('Messaging interface displayed');
+                
                 // Initialize messaging if not already done
                 if (window.blockchainBuddy && window.blockchainBuddy.currentAccount) {
-                    window.walletMessaging.init({
-                        address: window.blockchainBuddy.currentAccount,
-                        nickname: 'You'
-                    });
+                    console.log('Initializing wallet messaging with account:', window.blockchainBuddy.currentAccount);
+                    if (window.walletMessaging) {
+                        window.walletMessaging.init({
+                            address: window.blockchainBuddy.currentAccount,
+                            nickname: 'You'
+                        });
+                    } else {
+                        console.error('walletMessaging not available');
+                    }
+                } else {
+                    console.error('BlockchainBuddy or currentAccount not available');
                 }
+            } else {
+                console.error('Messaging interface element not found');
             }
         }
 
