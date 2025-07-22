@@ -1287,15 +1287,23 @@
             const contactsKey = getContactsKey();
             const contactsList = document.getElementById('contactsList');
             
+            // Debug: Log wallet connection status
+            console.log('Loading contacts...');
+            console.log('Current wallet address:', getCurrentWalletAddress());
+            console.log('Contacts key:', contactsKey);
+            
             // Don't show contacts if no wallet is connected
             if (!contactsKey) {
+                console.log('No wallet connected, showing connect message');
                 contactsList.innerHTML = '<div style="text-align: center; padding: 2rem; color: var(--text-secondary);">Please connect your wallet to view contacts</div>';
                 return;
             }
             
             const contacts = JSON.parse(localStorage.getItem(contactsKey) || '[]');
+            console.log('Found contacts:', contacts.length, contacts);
             
             if (contacts.length === 0) {
+                console.log('No contacts found, showing empty message');
                 contactsList.innerHTML = '<div style="text-align: center; padding: 2rem; color: var(--text-secondary);">No contacts saved yet. Add your first contact!</div>';
                 return;
             }
@@ -1320,6 +1328,24 @@
                     </div>
                 `;
                 contactsList.appendChild(contactItem);
+            });
+        }
+        
+        // Debug function to check all localStorage keys
+        function debugLocalStorage() {
+            console.log('=== LocalStorage Debug ===');
+            const keys = Object.keys(localStorage);
+            const contactKeys = keys.filter(key => key.includes('contact') || key.includes('wallet_contacts'));
+            console.log('All keys:', keys);
+            console.log('Contact-related keys:', contactKeys);
+            
+            contactKeys.forEach(key => {
+                try {
+                    const data = JSON.parse(localStorage.getItem(key));
+                    console.log(`Key: ${key}`, data);
+                } catch (e) {
+                    console.log(`Key: ${key} - Not JSON data`);
+                }
             });
         }
         
@@ -2633,6 +2659,11 @@ Or say "help" to see all my capabilities!`, 'bot');
             } else {
                 console.log('Voice commands available');
             }
+            
+            // Debug localStorage for contacts
+            setTimeout(() => {
+                debugLocalStorage();
+            }, 2000);
         });
 
         // Messaging System Functions
