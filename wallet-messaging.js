@@ -81,10 +81,9 @@ class WalletMessaging {
 
     // Initialize encryption
     async initEncryption() {
-        // Force clear all messaging data to start fresh
-        this.clearAllMessagingData();
-        
-        // Generate fresh encryption key
+        // Only clearAllMessagingData() if you want a manual reset!
+        // this.clearAllMessagingData(); // <-- Removed for persistence
+        // Generate fresh encryption key if not present
         this.encryptionKey = await this.getOrGenerateKey();
         console.log('Encryption initialized with new key');
     }
