@@ -81,8 +81,10 @@ class WalletMessaging {
 
     // Initialize encryption
     async initEncryption() {
-        // Generate or retrieve encryption key
+        // Clear any corrupted keys and generate fresh one
+        localStorage.removeItem('wallet_messaging_key');
         this.encryptionKey = await this.getOrGenerateKey();
+        console.log('Encryption initialized with new key');
     }
 
     // Get or generate encryption key
@@ -98,14 +100,26 @@ class WalletMessaging {
         return key;
     }
 
+    // Convert hex string to Uint8Array
+    hexToBytes(hex) {
+        const bytes = new Uint8Array(hex.length / 2);
+        for (let i = 0; i < hex.length; i += 2) {
+            bytes[i / 2] = parseInt(hex.substr(i, 2), 16);
+        }
+        return bytes;
+    }
+
     // Encrypt message
     async encryptMessage(message) {
         const encoder = new TextEncoder();
         const data = encoder.encode(message);
         
+        // Convert hex key to bytes
+        const keyBytes = this.hexToBytes(this.encryptionKey);
+        
         const key = await crypto.subtle.importKey(
             'raw',
-            encoder.encode(this.encryptionKey),
+            keyBytes,
             { name: 'AES-GCM' },
             false,
             ['encrypt']
@@ -127,10 +141,12 @@ class WalletMessaging {
     // Decrypt message
     async decryptMessage(encryptedData) {
         try {
-            const encoder = new TextEncoder();
+            // Convert hex key to bytes
+            const keyBytes = this.hexToBytes(this.encryptionKey);
+            
             const key = await crypto.subtle.importKey(
                 'raw',
-                encoder.encode(this.encryptionKey),
+                keyBytes,
                 { name: 'AES-GCM' },
                 false,
                 ['decrypt']
@@ -185,7 +201,7 @@ class WalletMessaging {
     }
 
     // Simulate incoming message for local mode
-    simulateIncomingMessage() {
+    async simulateIncomingMessage() {
         const demoMessages = [
             "Hey! How's it going?",
             "Did you receive the BDAG I sent?",
@@ -198,10 +214,14 @@ class WalletMessaging {
         ];
         
         const randomMessage = demoMessages[Math.floor(Math.random() * demoMessages.length)];
+        
+        // Properly encrypt the message
+        const encryptedContent = await this.encryptMessage(randomMessage);
+        
         this.handleNewMessage({
             id: Date.now().toString(),
             sender: this.currentChat,
-            content: { encrypted: btoa(randomMessage), iv: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12] },
+            content: encryptedContent,
             timestamp: Date.now(),
             type: 'text'
         });
