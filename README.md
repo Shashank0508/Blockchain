@@ -39,7 +39,7 @@ A modern blockchain wallet application with AI chatbot and voice command capabil
 
 4. **Configure your static site**:
    - **Name**: `blockchain-buddy-wallet` (or your preferred name)
-   - **Build Command**: `npm install`
+   - **Build Command**: Leave empty (no build needed for static HTML)
    - **Publish Directory**: `.` (root directory)
    - **Plan**: Choose "Free" for testing
 

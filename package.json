@@ -5,9 +5,7 @@
   "main": "index.html",
   "scripts": {
     "start": "npx http-server -p $PORT -c-1",
-    "dev": "python -m http.server 8000",
-    "build": "echo 'No build step required for static site'",
-    "test": "echo 'No tests specified'"
+    "dev": "python -m http.server 8000"
   },
   "keywords": [
     "blockchain",
