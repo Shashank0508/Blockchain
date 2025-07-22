@@ -85,6 +85,36 @@ class WalletMessaging {
         localStorage.removeItem('wallet_messaging_key');
         this.encryptionKey = await this.getOrGenerateKey();
         console.log('Encryption initialized with new key');
+        
+        // Clear legacy messages to prevent decryption errors
+        this.clearLegacyMessages();
+    }
+
+    // Clear legacy messages with old format
+    clearLegacyMessages() {
+        const keys = Object.keys(localStorage);
+        const chatKeys = keys.filter(key => key.startsWith('chat_'));
+        
+        chatKeys.forEach(key => {
+            try {
+                const messages = JSON.parse(localStorage.getItem(key));
+                if (messages && messages.length > 0) {
+                    // Check if any message has invalid format
+                    const hasInvalidFormat = messages.some(msg => 
+                        !msg.content || typeof msg.content === 'string' || 
+                        !msg.content.iv || !msg.content.encrypted
+                    );
+                    
+                    if (hasInvalidFormat) {
+                        console.log(`Clearing legacy messages for ${key}`);
+                        localStorage.removeItem(key);
+                    }
+                }
+            } catch (error) {
+                console.log(`Clearing corrupted chat data for ${key}`);
+                localStorage.removeItem(key);
+            }
+        });
     }
 
     // Get or generate encryption key
@@ -141,6 +171,12 @@ class WalletMessaging {
     // Decrypt message
     async decryptMessage(encryptedData) {
         try {
+            // Handle legacy messages or invalid format
+            if (!encryptedData || !encryptedData.iv || !encryptedData.encrypted) {
+                console.warn('Invalid message format, treating as legacy message');
+                return '[Legacy Message]';
+            }
+
             // Convert hex key to bytes
             const keyBytes = this.hexToBytes(this.encryptionKey);
             
@@ -453,11 +489,8 @@ class WalletMessaging {
                 });
             } catch (error) {
                 console.error('Failed to decrypt message:', error);
-                // Add message with error content
-                this.messages[this.currentChat].push({
-                    ...message,
-                    content: '[Encrypted Message]'
-                });
+                // Skip legacy messages instead of showing error
+                continue;
             }
         }
 
