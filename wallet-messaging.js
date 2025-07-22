@@ -20,21 +20,63 @@ class WalletMessaging {
 
     // Initialize Firebase
     initFirebase() {
-        const firebaseConfig = {
-            apiKey: "AIzaSyBXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
-            authDomain: "blockchain-buddy-7c64c.firebaseapp.com",
-            databaseURL: "https://blockchain-buddy-7c64c-default-rtdb.firebaseio.com",
-            projectId: "blockchain-buddy-7c64c",
-            storageBucket: "blockchain-buddy-7c64c.appspot.com",
-            messagingSenderId: "123456789012",
-            appId: "1:123456789012:web:abcdef1234567890"
+        // Use external config if available
+        const firebaseConfig = window.firebaseConfig || {
+            apiKey: "YOUR_API_KEY_HERE",
+            authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+            databaseURL: "https://YOUR_PROJECT_ID-default-rtdb.firebaseio.com",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_PROJECT_ID.appspot.com",
+            messagingSenderId: "YOUR_SENDER_ID",
+            appId: "YOUR_APP_ID"
         };
 
-        if (typeof firebase !== 'undefined') {
-            firebase.initializeApp(firebaseConfig);
-            this.database = firebase.database();
-            this.auth = firebase.auth();
+        if (typeof firebase !== 'undefined' && firebaseConfig.apiKey !== "YOUR_API_KEY_HERE") {
+            try {
+                firebase.initializeApp(firebaseConfig);
+                this.database = firebase.database();
+                this.auth = firebase.auth();
+                console.log('Firebase initialized successfully for messaging system');
+            } catch (error) {
+                console.error('Firebase initialization failed:', error);
+                this.showFirebaseError();
+            }
+        } else {
+            console.warn('Firebase not configured. Messaging will work in local mode only.');
+            this.showFirebaseWarning();
         }
+    }
+
+    // Show Firebase configuration error
+    showFirebaseError() {
+        const notification = document.createElement('div');
+        notification.style.cssText = `
+            position: fixed; top: 20px; right: 20px; padding: 1rem; 
+            background: #ef4444; color: white; border-radius: 8px; 
+            z-index: 10000; max-width: 300px; font-size: 0.875rem;
+        `;
+        notification.innerHTML = `
+            <strong>Firebase Error</strong><br>
+            Please check your Firebase configuration in firebase-config.js
+        `;
+        document.body.appendChild(notification);
+        setTimeout(() => notification.remove(), 5000);
+    }
+
+    // Show Firebase configuration warning
+    showFirebaseWarning() {
+        const notification = document.createElement('div');
+        notification.style.cssText = `
+            position: fixed; top: 20px; right: 20px; padding: 1rem; 
+            background: #f59e0b; color: white; border-radius: 8px; 
+            z-index: 10000; max-width: 300px; font-size: 0.875rem;
+        `;
+        notification.innerHTML = `
+            <strong>Firebase Not Configured</strong><br>
+            Update firebase-config.js with your Firebase credentials for real-time messaging
+        `;
+        document.body.appendChild(notification);
+        setTimeout(() => notification.remove(), 5000);
     }
 
     // Initialize encryption
@@ -119,7 +161,50 @@ class WalletMessaging {
             this.database.ref('online_users').on('value', (snapshot) => {
                 this.updateOnlineStatus(snapshot.val());
             });
+        } else {
+            // Local mode - simulate real-time updates
+            console.log('Running in local mode - messages stored locally only');
+            this.setupLocalMode();
         }
+    }
+
+    // Setup local mode functionality
+    setupLocalMode() {
+        // Simulate online users for demo
+        this.onlineUsers = new Set([
+            '0x1234567890123456789012345678901234567890',
+            '0xabcdefabcdefabcdefabcdefabcdefabcdefabcd'
+        ]);
+
+        // Simulate incoming messages periodically
+        setInterval(() => {
+            if (this.currentChat && Math.random() < 0.05) { // 5% chance every interval
+                this.simulateIncomingMessage();
+            }
+        }, 15000); // Check every 15 seconds
+    }
+
+    // Simulate incoming message for local mode
+    simulateIncomingMessage() {
+        const demoMessages = [
+            "Hey! How's it going?",
+            "Did you receive the BDAG I sent?",
+            "Thanks for the transaction!",
+            "Can you send me your wallet address?",
+            "The network seems a bit slow today",
+            "Have you tried the new features?",
+            "Great to chat with you!",
+            "Let me know when you're online"
+        ];
+        
+        const randomMessage = demoMessages[Math.floor(Math.random() * demoMessages.length)];
+        this.handleNewMessage({
+            id: Date.now().toString(),
+            sender: this.currentChat,
+            content: { encrypted: btoa(randomMessage), iv: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12] },
+            timestamp: Date.now(),
+            type: 'text'
+        });
     }
 
     // Handle new message
@@ -253,16 +338,31 @@ class WalletMessaging {
             message.fileSize = fileData.size;
         }
 
-        // Save to Firebase
+        // Save to Firebase if available
         if (this.database) {
-            await this.database.ref(`messages/${message.id}`).set(message);
+            try {
+                await this.database.ref(`messages/${message.id}`).set(message);
+            } catch (error) {
+                console.error('Failed to save message to Firebase:', error);
+            }
         }
+
+        // Save to local storage
+        this.saveMessageToLocal(message);
 
         // Add to local messages
         this.addMessageToChat({
             ...message,
             content: content // Store decrypted content locally
         });
+    }
+
+    // Save message to local storage
+    saveMessageToLocal(message) {
+        const chatKey = `chat_${this.currentChat}`;
+        const messages = JSON.parse(localStorage.getItem(chatKey) || '[]');
+        messages.push(message);
+        localStorage.setItem(chatKey, JSON.stringify(messages));
     }
 
     // Send transaction message
@@ -296,26 +396,49 @@ class WalletMessaging {
 
     // Load chat history
     async loadChatHistory() {
-        if (!this.database || !this.currentChat) return;
+        if (!this.currentChat) return;
 
-        const snapshot = await this.database.ref('messages')
-            .orderByChild('chatId')
-            .equalTo(this.currentChat)
-            .once('value');
+        let messages = [];
 
-        const messages = [];
-        snapshot.forEach(child => {
-            messages.push(child.val());
-        });
+        // Try to load from Firebase first
+        if (this.database) {
+            try {
+                const snapshot = await this.database.ref('messages')
+                    .orderByChild('chatId')
+                    .equalTo(this.currentChat)
+                    .once('value');
+
+                snapshot.forEach(child => {
+                    messages.push(child.val());
+                });
+            } catch (error) {
+                console.error('Failed to load messages from Firebase:', error);
+            }
+        }
+
+        // If no messages from Firebase, load from local storage
+        if (messages.length === 0) {
+            const chatKey = `chat_${this.currentChat}`;
+            messages = JSON.parse(localStorage.getItem(chatKey) || '[]');
+        }
 
         // Decrypt and sort messages
         this.messages[this.currentChat] = [];
         for (const message of messages.sort((a, b) => a.timestamp - b.timestamp)) {
-            const decryptedContent = await this.decryptMessage(message.content);
-            this.messages[this.currentChat].push({
-                ...message,
-                content: decryptedContent
-            });
+            try {
+                const decryptedContent = await this.decryptMessage(message.content);
+                this.messages[this.currentChat].push({
+                    ...message,
+                    content: decryptedContent
+                });
+            } catch (error) {
+                console.error('Failed to decrypt message:', error);
+                // Add message with error content
+                this.messages[this.currentChat].push({
+                    ...message,
+                    content: '[Encrypted Message]'
+                });
+            }
         }
 
         this.renderMessages();
@@ -323,7 +446,7 @@ class WalletMessaging {
 
     // Show chat interface
     showChatInterface() {
-        const chatContainer = document.getElementById('chatInterface');
+        const chatContainer = document.getElementById('messagingInterface');
         if (!chatContainer) return;
 
         const contact = this.contacts[this.currentChat];

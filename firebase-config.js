@@ -1,14 +1,19 @@
 // Firebase Configuration for Wallet Messaging System
-// Note: Replace with your actual Firebase project credentials
+// IMPORTANT: Replace with your actual Firebase project credentials
+// 1. Go to https://console.firebase.google.com/
+// 2. Create a new project or select existing project
+// 3. Go to Project Settings > General > Your apps
+// 4. Add a web app and copy the config below
+// 5. Enable Realtime Database in Firebase Console
 
 const firebaseConfig = {
-    apiKey: "AIzaSyBXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
-    authDomain: "blockchain-buddy-7c64c.firebaseapp.com",
-    databaseURL: "https://blockchain-buddy-7c64c-default-rtdb.firebaseio.com",
-    projectId: "blockchain-buddy-7c64c",
-    storageBucket: "blockchain-buddy-7c64c.appspot.com",
-    messagingSenderId: "123456789012",
-    appId: "1:123456789012:web:abcdef1234567890"
+    apiKey: "YOUR_API_KEY_HERE",
+    authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+    databaseURL: "https://YOUR_PROJECT_ID-default-rtdb.firebaseio.com",
+    projectId: "YOUR_PROJECT_ID",
+    storageBucket: "YOUR_PROJECT_ID.appspot.com",
+    messagingSenderId: "YOUR_SENDER_ID",
+    appId: "YOUR_APP_ID"
 };
 
 // Initialize Firebase
