@@ -864,6 +864,25 @@
             
             // Initial wallet info update (only once)
             updateWalletInfo();
+            
+            // Wait for wallet connection before loading additional data
+            setTimeout(() => {
+                // Load contacts for the connected wallet
+                loadContacts();
+                
+                // Load transaction history once
+                showTransactionHistory();
+                
+                // Fetch real transactions from blockchain (only if no existing data)
+                const currentWallet = window.blockchainBuddy?.currentAccount;
+                if (currentWallet) {
+                    // Only fetch if no existing transaction data
+                    const existingTransactions = localStorage.getItem('blockdag_transactions');
+                    if (!existingTransactions) {
+                        fetchRealTransactions(currentWallet);
+                    }
+                }
+            }, 2000); // Wait 2 seconds for wallet to connect
         });
 
         // Theme management functions
@@ -892,8 +911,18 @@
             showNotification(`${themeName} mode enabled!`, 'success');
         }
         
+        // Flag to prevent multiple simultaneous updates
+        let isUpdatingWallet = false;
+        
         function updateWalletInfo() {
+            // Prevent multiple simultaneous updates
+            if (isUpdatingWallet) {
+                return;
+            }
+            
+            isUpdatingWallet = true;
             console.log('Updating wallet info...');
+            
             if (window.blockchainBuddy && window.blockchainBuddy.isConnected) {
                 console.log('BlockchainBuddy connected:', window.blockchainBuddy.currentAccount);
                 document.getElementById('walletAddress').textContent = window.blockchainBuddy.currentAccount || 'Not connected';
@@ -907,15 +936,18 @@
                 window.blockchainBuddy.getBlockDAGBalance().then(balance => {
                     console.log('Balance:', balance);
                     document.getElementById('walletBalance').textContent = balance + ' BDAG';
+                    isUpdatingWallet = false;
                 }).catch(error => {
                     console.error('Error getting balance:', error);
                     document.getElementById('walletBalance').textContent = 'Error loading balance';
+                    isUpdatingWallet = false;
                 });
             } else {
                 console.log('BlockchainBuddy not connected');
                 document.getElementById('walletAddress').textContent = 'Not connected';
                 document.getElementById('walletBalance').textContent = '0 BDAG';
                 document.getElementById('connectionStatus').textContent = 'Not Connected';
+                isUpdatingWallet = false;
             }
         }
         
@@ -1898,27 +1930,7 @@ Just type or speak your command and I'll help you!`, 'bot');
             return null;
         }
         
-        // Load contacts when page loads
-        document.addEventListener('DOMContentLoaded', function() {
-            // Wait for wallet connection before loading contacts
-            setTimeout(() => {
-                // Load contacts for the connected wallet
-                loadContacts();
-                
-                // Load transaction history once
-                showTransactionHistory();
-                
-                // Fetch real transactions from blockchain (only if no existing data)
-                const currentWallet = window.blockchainBuddy?.currentAccount;
-                if (currentWallet) {
-                    // Only fetch if no existing transaction data
-                    const existingTransactions = localStorage.getItem('blockdag_transactions');
-                    if (!existingTransactions) {
-                        fetchRealTransactions(currentWallet);
-                    }
-                }
-            }, 2000); // Wait 2 seconds for wallet to connect
-        });
+
 
 
         
