@@ -738,6 +738,9 @@
                     <button class="btn btn-secondary" onclick="openAddContact()">
                         ➕ Add New Contact
                     </button>
+                    <button class="btn btn-secondary" onclick="clearAllContacts()" style="font-size: 0.75rem; padding: 0.5rem;">
+                        🗑️ Clear All
+                    </button>
                 </div>
             </div>
             <div id="contactsList">
@@ -1205,7 +1208,6 @@
                     <div class="contact-info">
                         <div class="contact-name">${contact.nickname}</div>
                         <div class="contact-address">${contact.address}</div>
-                        ${contact.notes ? `<div class="contact-notes">${contact.notes}</div>` : ''}
                     </div>
                     <div class="contact-actions">
                         <button class="btn btn-primary" onclick="sendToContact('${contact.address}')" style="font-size: 0.75rem;">💸 Send</button>
@@ -1288,6 +1290,22 @@
                 localStorage.setItem(contactsKey, JSON.stringify(contacts));
                 loadContacts();
                 showNotification('Contact deleted', 'success');
+            }
+        }
+
+        // Function to clear all contacts (for removing sample data)
+        function clearAllContacts() {
+            const contactsKey = getContactsKey();
+            if (!contactsKey) {
+                showNotification('Please connect your wallet first', 'error');
+                return;
+            }
+            
+            if (confirm('Are you sure you want to clear all contacts? This cannot be undone.')) {
+                localStorage.removeItem(contactsKey);
+                loadContacts();
+                showNotification('All contacts cleared', 'success');
+                console.log('All contacts cleared for wallet:', getCurrentWalletAddress());
             }
         }
         
@@ -1844,7 +1862,7 @@
 🌙 Theme: "switch to light mode" or "dark mode"
 
 🎤 Voice Commands: Click the microphone button to speak your commands!
-💡 Voice Examples: "send 5 BDAG to Bhagya Sri", "check my balance", "switch to light mode"
+                💡 Voice Examples: "send 5 BDAG to contact", "check my balance", "switch to light mode"
 
 Just type or speak your command and I'll help you!`, 'bot');
         }
