@@ -890,6 +890,33 @@
                     }
                 }
             }, 2000); // Wait 2 seconds for wallet to connect
+            
+            // Check connection status every 5 seconds to ensure it stays accurate
+            setInterval(() => {
+                const currentBalance = document.getElementById('walletBalance').textContent;
+                const currentStatus = document.getElementById('connectionStatus').textContent;
+                const currentAddress = document.getElementById('walletAddress').textContent;
+                
+                // If we have a balance but status shows "Not Connected", fix it
+                if (currentBalance && currentBalance !== '0 BDAG' && currentBalance !== 'Loading...' && 
+                    currentBalance !== 'Error loading balance' && currentStatus === 'Not Connected') {
+                    console.log('Fixing connection status - wallet has balance but shows not connected');
+                    document.getElementById('connectionStatus').textContent = 'Connected';
+                }
+                
+                // If we have a wallet address but status shows "Not Connected", fix it
+                if (currentAddress && currentAddress !== 'Not connected' && currentStatus === 'Not Connected') {
+                    console.log('Fixing connection status - wallet has address but shows not connected');
+                    document.getElementById('connectionStatus').textContent = 'Connected';
+                }
+                
+                // If wallet is actually connected but status is wrong, fix it
+                if (window.blockchainBuddy && window.blockchainBuddy.isConnected && 
+                    window.blockchainBuddy.currentAccount && currentStatus === 'Not Connected') {
+                    console.log('Fixing connection status - wallet is connected but status is wrong');
+                    document.getElementById('connectionStatus').textContent = 'Connected';
+                }
+            }, 5000);
         });
 
         // Theme management functions
@@ -930,9 +957,14 @@
             isUpdatingWallet = true;
             console.log('Updating wallet info...');
             
-            if (window.blockchainBuddy && window.blockchainBuddy.isConnected) {
+            // Check if wallet is connected by looking for current account
+            const isConnected = window.blockchainBuddy && 
+                              window.blockchainBuddy.isConnected && 
+                              window.blockchainBuddy.currentAccount;
+            
+            if (isConnected) {
                 console.log('BlockchainBuddy connected:', window.blockchainBuddy.currentAccount);
-                document.getElementById('walletAddress').textContent = window.blockchainBuddy.currentAccount || 'Not connected';
+                document.getElementById('walletAddress').textContent = window.blockchainBuddy.currentAccount;
                 document.getElementById('walletBalance').textContent = 'Loading...';
                 document.getElementById('connectionStatus').textContent = 'Connected';
                 
@@ -943,10 +975,14 @@
                 window.blockchainBuddy.getBlockDAGBalance().then(balance => {
                     console.log('Balance:', balance);
                     document.getElementById('walletBalance').textContent = balance + ' BDAG';
+                    // Ensure connection status stays as "Connected" when balance loads successfully
+                    document.getElementById('connectionStatus').textContent = 'Connected';
                     isUpdatingWallet = false;
                 }).catch(error => {
                     console.error('Error getting balance:', error);
                     document.getElementById('walletBalance').textContent = 'Error loading balance';
+                    // Keep connection status as "Connected" even if balance fails to load
+                    document.getElementById('connectionStatus').textContent = 'Connected';
                     isUpdatingWallet = false;
                 });
             } else {
