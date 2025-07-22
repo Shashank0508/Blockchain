@@ -719,6 +719,9 @@ document.addEventListener('DOMContentLoaded', function() {
     if (connectWalletBtn) {
         connectWalletBtn.addEventListener('click', async () => {
             await window.blockchainBuddy.connectWallet();
+            if (typeof updateWalletInfo === 'function') {
+                updateWalletInfo();
+            }
         });
     }
 });
