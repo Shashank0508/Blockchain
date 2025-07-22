@@ -76,39 +76,21 @@
                 </p>
             </section>
 
-            <!-- Features Grid -->
-            <section class="features">
-                <div class="feature-card chat-feature-card" id="chatFeatureCard">
-                    <div class="feature-icon">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
-                        </svg>
-                    </div>
-                    <h3 class="feature-title" data-translate="chat-interface-title">Chat Interface</h3>
-                    <p class="feature-description" data-translate="chat-interface-desc">Natural language commands for blockchain operations</p>
-                    <button class="feature-button" data-translate="try-chat">Try Chat Interface</button>
-                </div>
-
-                <div class="feature-card wallet-feature-card" id="walletFeatureCard">
-                    <div class="feature-icon">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <!-- Main Action Buttons -->
+            <section class="main-actions">
+                <div class="action-buttons-container">
+                    <button class="action-button connect-wallet-btn" id="mainConnectWalletBtn" onclick="connectWallet()">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
                         </svg>
-                    </div>
-                    <h3 class="feature-title" data-translate="secure-wallet-title">Secure Wallet</h3>
-                    <p class="feature-description" data-translate="secure-wallet-desc">Safe and secure BlockDAG wallet integration</p>
-                    <button class="feature-button" data-translate="connect-wallet">Connect Wallet</button>
-                </div>
-
-                <div class="feature-card transactions-feature-card" id="transactionsFeatureCard">
-                    <div class="feature-icon">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                        Connect Wallet
+                    </button>
+                    <button class="action-button open-wallet-btn" id="mainOpenWalletBtn" onclick="openWalletPage()">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
                         </svg>
-                    </div>
-                    <h3 class="feature-title" data-translate="fast-transactions-title">Fast Transactions</h3>
-                    <p class="feature-description" data-translate="fast-transactions-desc">Lightning-fast transactions with BlockDAG technology</p>
-                    <button class="feature-button" data-translate="view-transactions">View Transactions</button>
+                        💰 Open Wallet
+                    </button>
                 </div>
             </section>
 
@@ -354,5 +336,102 @@
     <script src="script.js"></script>
     <script src="test-transactions.js"></script>
     <script src="connection-test.js"></script>
+    
+    <script>
+        // Function to handle wallet connection
+        async function connectWallet() {
+            try {
+                if (window.blockchainBuddy) {
+                    const success = await window.blockchainBuddy.connectWallet();
+                    if (success) {
+                        // Update button states
+                        const mainConnectBtn = document.getElementById('mainConnectWalletBtn');
+                        const headerConnectBtn = document.getElementById('connectWalletBtn');
+                        const openWalletBtn = document.getElementById('openWalletBtn');
+                        
+                        if (mainConnectBtn) {
+                            mainConnectBtn.textContent = 'Wallet Connected';
+                            mainConnectBtn.style.background = 'linear-gradient(135deg, #059669, #047857)';
+                        }
+                        
+                        if (headerConnectBtn) {
+                            headerConnectBtn.textContent = 'Wallet Connected';
+                            headerConnectBtn.classList.add('connected');
+                        }
+                        
+                        if (openWalletBtn) {
+                            openWalletBtn.style.display = 'inline-block';
+                        }
+                        
+                        // Show success message
+                        showNotification('Wallet connected successfully!', 'success');
+                    } else {
+                        showNotification('Failed to connect wallet. Please try again.', 'error');
+                    }
+                } else {
+                    showNotification('Blockchain integration not available. Please refresh the page.', 'error');
+                }
+            } catch (error) {
+                console.error('Error connecting wallet:', error);
+                showNotification('Error connecting wallet: ' + error.message, 'error');
+            }
+        }
+        
+        // Function to show notifications
+        function showNotification(message, type = 'info') {
+            // Create notification element
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            notification.textContent = message;
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                padding: 1rem 1.5rem;
+                border-radius: 8px;
+                color: white;
+                font-weight: 500;
+                z-index: 1000;
+                animation: slideIn 0.3s ease;
+                max-width: 300px;
+            `;
+            
+            // Set background color based on type
+            if (type === 'success') {
+                notification.style.background = '#10b981';
+            } else if (type === 'error') {
+                notification.style.background = '#ef4444';
+            } else {
+                notification.style.background = '#3b82f6';
+            }
+            
+            // Add to page
+            document.body.appendChild(notification);
+            
+            // Remove after 3 seconds
+            setTimeout(() => {
+                notification.style.animation = 'slideOut 0.3s ease';
+                setTimeout(() => {
+                    if (notification.parentNode) {
+                        notification.parentNode.removeChild(notification);
+                    }
+                }, 300);
+            }, 3000);
+        }
+        
+        // Add CSS animations for notifications
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideIn {
+                from { transform: translateX(100%); opacity: 0; }
+                to { transform: translateX(0); opacity: 1; }
+            }
+            @keyframes slideOut {
+                from { transform: translateX(0); opacity: 1; }
+                to { transform: translateX(100%); opacity: 0; }
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
 </body>
 </html> 
